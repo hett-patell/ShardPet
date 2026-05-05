@@ -19,7 +19,8 @@ describe("DEFAULT_SETTINGS", () => {
       reducedMotion: "auto",
       allowlist: [],
       productivityNagEnabled: true,
-      workThresholdMinutes: 5
+      workThresholdMinutes: 5,
+      showTimerIndicator: false
     });
   });
 });

@@ -27,6 +27,7 @@ const nagEnabledEl = $<HTMLInputElement>("nag-enabled");
 const thresholdEl = $<HTMLInputElement>("threshold");
 const thresholdOut = $<HTMLOutputElement>("threshold-out");
 const allowlistEl = $<HTMLTextAreaElement>("allowlist");
+const indicatorEl = $<HTMLInputElement>("indicator");
 const resyncBtn = $<HTMLButtonElement>("resync");
 const resetTimersBtn = $<HTMLButtonElement>("reset-timers");
 const statusEl = $<HTMLSpanElement>("status");
@@ -46,6 +47,7 @@ function applyToForm(s: Settings): void {
   thresholdEl.value = String(s.workThresholdMinutes);
   thresholdOut.value = `${s.workThresholdMinutes} min`;
   allowlistEl.value = s.allowlist.join("\n");
+  indicatorEl.checked = s.showTimerIndicator;
 }
 
 const splitLines = (text: string): string[] =>
@@ -62,7 +64,8 @@ function readForm(): Settings {
     blacklist: splitLines(blacklistEl.value),
     allowlist: splitLines(allowlistEl.value),
     productivityNagEnabled: nagEnabledEl.checked,
-    workThresholdMinutes: Number(thresholdEl.value)
+    workThresholdMinutes: Number(thresholdEl.value),
+    showTimerIndicator: indicatorEl.checked
   };
 }
 
@@ -74,7 +77,7 @@ async function persist(): Promise<void> {
 
 const formEls: HTMLElement[] = [
   enabledEl, countEl, sizeEl, offsetEl, speedEl, reducedEl, blacklistEl,
-  nagEnabledEl, thresholdEl, allowlistEl
+  nagEnabledEl, thresholdEl, allowlistEl, indicatorEl
 ];
 
 for (const el of formEls) {

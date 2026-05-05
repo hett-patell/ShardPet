@@ -37,6 +37,8 @@ type Pokemon = {
 let host: HTMLDivElement | null = null;
 let shadow: ShadowRoot | null = null;
 let lane: HTMLDivElement | null = null;
+let indicator: HTMLDivElement | null = null;
+let indicatorHost: HTMLDivElement | null = null;
 let pokemons: Pokemon[] = [];
 let rafId = 0;
 let lastFrame = 0;
@@ -222,6 +224,7 @@ function attachLifecycle(): void {
     pauseWorkTimer();
     if (host) host.remove();
     if (overlayHandles) overlayHandles.destroy();
+    teardownIndicator();
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -301,9 +304,87 @@ async function runWorkTick(): Promise<void> {
     `trigger=${result.shouldTrigger}`
   );
 
+  updateIndicator(hostname, isAllowlisted, accumulated, thresholdSeconds, cooldownRemainingMs);
+
   if (result.shouldTrigger) {
     triggerNagOverlay();
   }
+}
+
+function ensureIndicator(): void {
+  if (!settings || !settings.showTimerIndicator) {
+    teardownIndicator();
+    return;
+  }
+  if (indicator) return;
+
+  indicatorHost = document.createElement("div");
+  indicatorHost.id = "shardpet-indicator-host";
+  indicatorHost.style.cssText =
+    "all: initial; position: fixed; top: 8px; right: 8px; z-index: 2147483647; pointer-events: none;";
+  const ishadow = indicatorHost.attachShadow({ mode: "closed" });
+  const istyle = document.createElement("style");
+  istyle.textContent = `
+    .ind {
+      font: 600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #fff;
+      background: rgba(10, 12, 18, 0.78);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+    }
+    .ind.allowed { background: rgba(20, 90, 40, 0.85); }
+    .ind.cooldown { background: rgba(120, 70, 0, 0.85); }
+  `;
+  ishadow.appendChild(istyle);
+  indicator = document.createElement("div");
+  indicator.className = "ind";
+  indicator.textContent = "ShardPet…";
+  ishadow.appendChild(indicator);
+  document.documentElement.appendChild(indicatorHost);
+}
+
+function teardownIndicator(): void {
+  if (indicatorHost) indicatorHost.remove();
+  indicatorHost = null;
+  indicator = null;
+}
+
+function fmtSeconds(total: number): string {
+  const s = Math.max(0, Math.round(total));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}m${r.toString().padStart(2, "0")}s`;
+}
+
+function updateIndicator(
+  hostname: string,
+  isAllowlisted: boolean,
+  accumulatedSec: number,
+  thresholdSec: number,
+  cooldownMs: number
+): void {
+  ensureIndicator();
+  if (!indicator) return;
+  if (isAllowlisted) {
+    indicator.className = "ind allowed";
+    indicator.textContent = `${hostname} • allowlisted`;
+    return;
+  }
+  if (cooldownMs > 0) {
+    indicator.className = "ind cooldown";
+    indicator.textContent = `${hostname} • cooldown ${fmtSeconds(cooldownMs / 1000)}`;
+    return;
+  }
+  indicator.className = "ind";
+  indicator.textContent = `${hostname} • ${fmtSeconds(accumulatedSec)} / ${fmtSeconds(thresholdSec)}`;
 }
 
 function triggerNagOverlay(): void {
@@ -332,6 +413,7 @@ function triggerNagOverlay(): void {
 async function reloadSettings(): Promise<void> {
   const s = await loadSettings();
   settings = s;
+  if (!s.showTimerIndicator) teardownIndicator();
   if (!s.enabled || isBlacklisted(s, location.hostname)) {
     teardown();
     return;

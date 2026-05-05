@@ -12,6 +12,7 @@ export type Settings = {
   allowlist: string[];
   productivityNagEnabled: boolean;
   workThresholdMinutes: number;
+  showTimerIndicator: boolean;
 };
 
 export type WorkTimers = {
@@ -37,7 +38,8 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: "auto",
   allowlist: [],
   productivityNagEnabled: true,
-  workThresholdMinutes: 5
+  workThresholdMinutes: 5,
+  showTimerIndicator: false
 };
 
 export const DEFAULT_WORK_TIMERS: WorkTimers = {
