@@ -70,7 +70,10 @@
   position: absolute;
   bottom: 85%;
   left: 85%;
-  font: 700 18px/1 ui-monospace, monospace;
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  font-size: clamp(10px, calc(var(--poke-size, 40px) * 0.22), 32px);
+  line-height: 1;
   color: #aab;
   pointer-events: none;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);

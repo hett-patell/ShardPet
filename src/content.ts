@@ -229,24 +229,28 @@ function rerollPokemon(index: number): void {
   const c = cache;
   if (!c || !p) return;
 
-  // Guard against double-click while reroll is in flight
   if (p.container.classList.contains("rerolling")) return;
 
-  // Flash current name for 600ms before swapping
   p.nameLabel.classList.add("show");
   p.container.classList.add("rerolling");
+
+  const clearReroll = () => {
+    p.nameLabel.classList.remove("show");
+    p.container.classList.remove("rerolling");
+  };
 
   setTimeout(() => {
     const newId = pickRandomId(c, p.id);
     const url = c.byId[newId];
-    if (!url) return;
+    if (!url) {
+      clearReroll();
+      return;
+    }
 
     p.id = newId;
     p.el.src = url;
-    const name = NAME_BY_ID[newId] ?? `#${newId}`;
-    p.nameLabel.textContent = name;
+    p.nameLabel.textContent = NAME_BY_ID[newId] ?? `#${newId}`;
 
-    // Snorlax stays still, others get fresh wander state
     if (isImmobile(newId)) {
       p.state.mode = "idle";
       p.state.vx = 0;
@@ -260,7 +264,6 @@ function rerollPokemon(index: number): void {
       });
     }
 
-    // Snorlax Zzz management
     if (isImmobile(newId) && !p.zzzEl) {
       const zzz = document.createElement("span");
       zzz.className = "poke-zzz";
@@ -272,11 +275,7 @@ function rerollPokemon(index: number): void {
       p.zzzEl = null;
     }
 
-    // Hide name label after brief flash
-    setTimeout(() => {
-      p.nameLabel.classList.remove("show");
-      p.container.classList.remove("rerolling");
-    }, 400);
+    setTimeout(clearReroll, 400);
   }, 600);
 }
 
