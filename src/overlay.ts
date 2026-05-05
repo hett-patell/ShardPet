@@ -45,17 +45,25 @@ export function mountOverlay(args: {
   subtitle.className = "nag-subtitle";
   subtitle.textContent = `${args.hostname} isn't on your allowlist. You've been here ${args.thresholdMinutes}+ minutes.`;
 
-  const grid = document.createElement("div");
-  grid.className = "nag-grid";
+  const scatter = document.createElement("div");
+  scatter.className = "nag-scatter";
   const urls = shuffled(args.spriteDataUrls);
   for (let i = 0; i < urls.length; i++) {
     const img = document.createElement("img");
-    img.className = "nag-grid-sprite";
+    img.className = "nag-scatter-sprite";
     img.src = urls[i] as string;
     img.alt = "";
     img.draggable = false;
-    img.style.animationDelay = `${(i % 8) * 120}ms`;
-    grid.appendChild(img);
+    const top = 4 + Math.random() * 84;
+    const left = 3 + Math.random() * 90;
+    const scale = 0.85 + Math.random() * 0.55;
+    const rot = (Math.random() - 0.5) * 14;
+    const delay = Math.random() * 1200;
+    img.style.cssText =
+      `top: ${top}%; left: ${left}%;` +
+      ` --scatter-rot: ${rot}deg; --scatter-scale: ${scale};` +
+      ` animation-delay: ${delay}ms;`;
+    scatter.appendChild(img);
   }
 
   const button = document.createElement("button");
@@ -65,9 +73,9 @@ export function mountOverlay(args: {
 
   card.appendChild(title);
   card.appendChild(subtitle);
-  card.appendChild(grid);
   card.appendChild(button);
 
+  backdrop.appendChild(scatter);
   backdrop.appendChild(card);
   shadow.appendChild(backdrop);
 
