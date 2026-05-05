@@ -20,7 +20,8 @@ describe("DEFAULT_SETTINGS", () => {
       allowlist: [],
       productivityNagEnabled: true,
       workThresholdMinutes: 5,
-      showTimerIndicator: false
+      showTimerIndicator: false,
+      favorites: []
     });
   });
 });

@@ -28,6 +28,7 @@ const thresholdEl = $<HTMLInputElement>("threshold");
 const thresholdOut = $<HTMLOutputElement>("threshold-out");
 const allowlistEl = $<HTMLTextAreaElement>("allowlist");
 const indicatorEl = $<HTMLInputElement>("indicator");
+const favoritesEl = $<HTMLTextAreaElement>("favorites");
 const resyncBtn = $<HTMLButtonElement>("resync");
 const resetTimersBtn = $<HTMLButtonElement>("reset-timers");
 const statusEl = $<HTMLSpanElement>("status");
@@ -43,6 +44,7 @@ function applyToForm(s: Settings): void {
   speedEl.value = s.speed;
   reducedEl.value = s.reducedMotion;
   blacklistEl.value = s.blacklist.join("\n");
+  favoritesEl.value = s.favorites.join("\n");
   nagEnabledEl.checked = s.productivityNagEnabled;
   thresholdEl.value = String(s.workThresholdMinutes);
   thresholdOut.value = `${s.workThresholdMinutes} min`;
@@ -62,6 +64,7 @@ function readForm(): Settings {
     speed: speedEl.value as Settings["speed"],
     reducedMotion: reducedEl.value as Settings["reducedMotion"],
     blacklist: splitLines(blacklistEl.value),
+    favorites: splitLines(favoritesEl.value).map(Number).filter(n => !isNaN(n) && n > 0),
     allowlist: splitLines(allowlistEl.value),
     productivityNagEnabled: nagEnabledEl.checked,
     workThresholdMinutes: Number(thresholdEl.value),
@@ -77,7 +80,7 @@ async function persist(): Promise<void> {
 
 const formEls: HTMLElement[] = [
   enabledEl, countEl, sizeEl, offsetEl, speedEl, reducedEl, blacklistEl,
-  nagEnabledEl, thresholdEl, allowlistEl, indicatorEl
+  nagEnabledEl, thresholdEl, allowlistEl, indicatorEl, favoritesEl
 ];
 
 for (const el of formEls) {

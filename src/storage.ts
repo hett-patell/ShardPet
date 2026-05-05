@@ -13,6 +13,7 @@ export type Settings = {
   productivityNagEnabled: boolean;
   workThresholdMinutes: number;
   showTimerIndicator: boolean;
+  favorites: number[];
 };
 
 export type WorkTimers = {
@@ -39,7 +40,8 @@ export const DEFAULT_SETTINGS: Settings = {
   allowlist: [],
   productivityNagEnabled: true,
   workThresholdMinutes: 5,
-  showTimerIndicator: false
+  showTimerIndicator: false,
+  favorites: []
 };
 
 export const DEFAULT_WORK_TIMERS: WorkTimers = {
@@ -57,7 +59,8 @@ export function mergeSettings(partial: Partial<Settings> | undefined): Settings 
   const blacklist = Array.isArray(s.blacklist) ? s.blacklist.filter(x => typeof x === "string") : [];
   const allowlist = Array.isArray(s.allowlist) ? s.allowlist.filter(x => typeof x === "string") : [];
   const workThresholdMinutes = clamp(s.workThresholdMinutes, 1, 120);
-  return { ...s, count, sizePx, verticalOffsetPx, blacklist, allowlist, workThresholdMinutes };
+  const favorites = Array.isArray(s.favorites) ? s.favorites.filter(x => typeof x === "number") : [];
+  return { ...s, count, sizePx, verticalOffsetPx, blacklist, allowlist, workThresholdMinutes, favorites };
 }
 
 export async function loadSettings(): Promise<Settings> {

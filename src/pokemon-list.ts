@@ -27,5 +27,10 @@ export const POKEMON_LIST: ReadonlyArray<PokemonEntry> = [
   { id: 448, name: "lucario" }
 ];
 
+export const NAME_BY_ID: Record<number, string> = {};
+for (const p of POKEMON_LIST) {
+  NAME_BY_ID[p.id] = p.name;
+}
+
 export const SPRITE_URL = (id: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`;

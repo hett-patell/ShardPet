@@ -21,6 +21,7 @@ import {
   tickWorkTimer
 } from "./work-timer";
 import { mountOverlay, type OverlayHandles } from "./overlay";
+import { NAME_BY_ID } from "./pokemon-list";
 import stylesText from "./styles.css?raw";
 
 if (window.top === window.self && !document.documentElement.dataset.shardpetMounted) {
@@ -31,6 +32,9 @@ if (window.top === window.self && !document.documentElement.dataset.shardpetMoun
 type Pokemon = {
   id: number;
   el: HTMLImageElement;
+  container: HTMLDivElement;
+  nameLabel: HTMLSpanElement;
+  zzzEl: HTMLSpanElement | null;
   state: WanderState;
 };
 
@@ -147,13 +151,25 @@ function pickRandomId(c: SpriteCache, exclude?: number): number {
   if (all.length === 0) throw new Error("sprite cache is empty");
   const filtered = exclude === undefined ? all : all.filter(id => id !== exclude);
   const pool = filtered.length > 0 ? filtered : all;
-  const pick = pool[Math.floor(Math.random() * pool.length)];
-  return pick as number;
+
+  // Weighted selection — favorites get 3x weight
+  if (settings && settings.favorites.length > 0) {
+    const weighted: number[] = [];
+    for (const id of pool) {
+      weighted.push(id);
+      if (settings.favorites.includes(id)) {
+        weighted.push(id, id); // 2 extra copies = 3x weight
+      }
+    }
+    return weighted[Math.floor(Math.random() * weighted.length)] as number;
+  }
+
+  return pool[Math.floor(Math.random() * pool.length)] as number;
 }
 
 function spawnPokemons(s: Settings, c: SpriteCache): void {
   if (!lane) return;
-  for (const p of pokemons) p.el.remove();
+  for (const p of pokemons) p.container.remove();
   pokemons = [];
 
   const vw = window.innerWidth;
@@ -161,15 +177,35 @@ function spawnPokemons(s: Settings, c: SpriteCache): void {
     const id = pickRandomId(c);
     const url = c.byId[id];
     if (!url) continue;
+
+    const container = document.createElement("div");
+    container.className = "poke-container";
+    container.style.setProperty("--poke-size", `${s.sizePx}px`);
+    container.style.setProperty("--poke-bottom", `${s.verticalOffsetPx}px`);
+
     const el = document.createElement("img");
     el.className = "poke";
     el.src = url;
-    el.style.setProperty("--poke-size", `${s.sizePx}px`);
-    el.style.setProperty("--poke-bottom", `${s.verticalOffsetPx}px`);
     el.alt = "";
     el.draggable = false;
     el.addEventListener("click", () => rerollPokemon(i));
-    lane.appendChild(el);
+    container.appendChild(el);
+
+    const name = NAME_BY_ID[id] ?? `#${id}`;
+    const nameLabel = document.createElement("span");
+    nameLabel.className = "poke-name";
+    nameLabel.textContent = name;
+    container.appendChild(nameLabel);
+
+    let zzzEl: HTMLSpanElement | null = null;
+    if (isImmobile(id)) {
+      zzzEl = document.createElement("span");
+      zzzEl.className = "poke-zzz";
+      zzzEl.textContent = "Z";
+      container.appendChild(zzzEl);
+    }
+
+    lane.appendChild(container);
 
     const state = initialWanderState({
       viewportWidth: vw,
@@ -184,31 +220,64 @@ function spawnPokemons(s: Settings, c: SpriteCache): void {
       state.dir = 1;
     }
 
-    pokemons.push({ id, el, state });
+    pokemons.push({ id, el, container, nameLabel, zzzEl, state });
   }
 }
 
 function rerollPokemon(index: number): void {
   const p = pokemons[index];
-  if (!cache || !p) return;
-  const newId = pickRandomId(cache, p.id);
-  const url = cache.byId[newId];
-  if (!url) return;
-  p.id = newId;
-  p.el.src = url;
+  const c = cache;
+  if (!c || !p) return;
 
-  if (isImmobile(newId)) {
-    p.state.mode = "idle";
-    p.state.vx = 0;
-    p.state.dir = 1;
-  } else if (settings) {
-    p.state = initialWanderState({
-      viewportWidth: window.innerWidth,
-      spriteWidth: settings.sizePx,
-      now: performance.now(),
-      rng: Math.random
-    });
-  }
+  // Guard against double-click while reroll is in flight
+  if (p.container.classList.contains("rerolling")) return;
+
+  // Flash current name for 600ms before swapping
+  p.nameLabel.classList.add("show");
+  p.container.classList.add("rerolling");
+
+  setTimeout(() => {
+    const newId = pickRandomId(c, p.id);
+    const url = c.byId[newId];
+    if (!url) return;
+
+    p.id = newId;
+    p.el.src = url;
+    const name = NAME_BY_ID[newId] ?? `#${newId}`;
+    p.nameLabel.textContent = name;
+
+    // Snorlax stays still, others get fresh wander state
+    if (isImmobile(newId)) {
+      p.state.mode = "idle";
+      p.state.vx = 0;
+      p.state.dir = 1;
+    } else if (settings) {
+      p.state = initialWanderState({
+        viewportWidth: window.innerWidth,
+        spriteWidth: settings.sizePx,
+        now: performance.now(),
+        rng: Math.random
+      });
+    }
+
+    // Snorlax Zzz management
+    if (isImmobile(newId) && !p.zzzEl) {
+      const zzz = document.createElement("span");
+      zzz.className = "poke-zzz";
+      zzz.textContent = "Z";
+      p.container.appendChild(zzz);
+      p.zzzEl = zzz;
+    } else if (!isImmobile(newId) && p.zzzEl) {
+      p.zzzEl.remove();
+      p.zzzEl = null;
+    }
+
+    // Hide name label after brief flash
+    setTimeout(() => {
+      p.nameLabel.classList.remove("show");
+      p.container.classList.remove("rerolling");
+    }, 400);
+  }, 600);
 }
 
 function startLoop(): void {
@@ -238,7 +307,7 @@ function startLoop(): void {
       }
       const yOff = isImmobile(p.id) ? 0 : hopOffsetPx(p.state, now);
       const flip = p.state.dir === -1 ? -1 : 1;
-      p.el.style.transform = `translate3d(${p.state.x}px, ${yOff}px, 0) scaleX(${flip})`;
+      p.container.style.transform = `translate3d(${p.state.x}px, ${yOff}px, 0) scaleX(${flip})`;
     }
   };
   rafId = requestAnimationFrame(tick);
@@ -463,7 +532,8 @@ function visualSettingsChanged(prev: Settings | null, next: Settings): boolean {
     prev.verticalOffsetPx !== next.verticalOffsetPx ||
     prev.speed !== next.speed ||
     prev.reducedMotion !== next.reducedMotion ||
-    prev.blacklist.join("|") !== next.blacklist.join("|")
+    prev.blacklist.join("|") !== next.blacklist.join("|") ||
+    prev.favorites.join(",") !== next.favorites.join(",")
   );
 }
 
@@ -490,12 +560,15 @@ async function reloadSettings(): Promise<void> {
   applyLaneHeight(s);
 
   const needsRespawn =
-    !prev || prev.count !== s.count || prev.sizePx !== s.sizePx;
+    !prev ||
+    prev.count !== s.count ||
+    prev.sizePx !== s.sizePx ||
+    prev.favorites.join(",") !== s.favorites.join(",");
   if (cache && needsRespawn) {
     spawnPokemons(s, cache);
   } else if (prev && prev.verticalOffsetPx !== s.verticalOffsetPx) {
     for (const p of pokemons) {
-      p.el.style.setProperty("--poke-bottom", `${s.verticalOffsetPx}px`);
+      p.container.style.setProperty("--poke-bottom", `${s.verticalOffsetPx}px`);
     }
   }
 }
@@ -507,6 +580,7 @@ async function reloadCache(): Promise<void> {
 
 function teardown(): void {
   stopLoop();
+  // host.remove() recursively removes all descendants (containers, labels, zzz)
   if (host) host.remove();
   host = null;
   shadow = null;

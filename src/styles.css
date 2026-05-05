@@ -12,22 +12,96 @@
   overflow: hidden;
 }
 
-.poke {
+.poke-container {
   position: absolute;
   bottom: var(--poke-bottom, 8px);
   left: 0;
-  width: var(--poke-size, 40px);
-  height: var(--poke-size, 40px);
   pointer-events: auto;
   cursor: pointer;
-  image-rendering: pixelated;
-  user-select: none;
-  -webkit-user-drag: none;
   will-change: transform;
 }
 
+.poke {
+  display: block;
+  width: var(--poke-size, 40px);
+  height: var(--poke-size, 40px);
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Name tooltip — appears on hover, also shown briefly on click */
+.poke-name {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 600 11px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #fff;
+  background: rgba(10, 12, 18, 0.82);
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  margin-bottom: 5px;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.poke-container:hover .poke-name,
+.poke-name.show {
+  opacity: 1;
+}
+
+.poke-container.rerolling .poke-name {
+  opacity: 1;
+  transform: translateX(-50%) scale(1.08);
+  background: rgba(10, 12, 18, 0.92);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+/* Floating Zzz above Snorlax */
+.poke-zzz {
+  position: absolute;
+  bottom: 85%;
+  left: 85%;
+  font: 700 18px/1 ui-monospace, monospace;
+  color: #aab;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  animation: zzz-float 2.2s ease-in-out infinite;
+  user-select: none;
+}
+
+@keyframes zzz-float {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 0.7;
+    transform: translate(8px, -20px) scale(1);
+  }
+  100% {
+    transform: translate(14px, -38px) scale(0.8);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .poke[data-respect-reduced-motion="true"] {
+  .poke-name {
     transition: none;
+  }
+  .poke-zzz {
+    animation: none;
+    display: none;
   }
 }
