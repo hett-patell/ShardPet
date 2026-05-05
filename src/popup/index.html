@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ShardPet</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+        width: 340px;
+        max-height: 560px;
+        overflow-y: auto;
+        background: #fff;
+        color: #111;
+        padding: 14px 14px 16px;
+        box-sizing: border-box;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #1a1b1f; color: #ececec; }
+        textarea, button { background: #25272d; color: #ececec; border-color: #3a3d44; }
+        .section { border-color: #2c2e34; }
+        .footer { color: #8a8c92; }
+        .status { color: #8a8c92; }
+        h1 .badge { background: #2a2c33; color: #c5c7cd; }
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      h1 .badge {
+        font-size: 10px;
+        font-weight: 500;
+        background: #f1f1f3;
+        color: #555;
+        padding: 2px 6px;
+        border-radius: 999px;
+      }
+      h2 {
+        margin: 14px 0 6px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.7;
+      }
+      label {
+        display: block;
+        margin: 8px 0 3px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      label output {
+        font-weight: 400;
+        opacity: 0.7;
+        margin-left: 4px;
+      }
+      input[type="range"] {
+        width: 100%;
+        margin: 2px 0 4px;
+      }
+      select {
+        width: 100%;
+        padding: 4px 6px;
+        font: inherit;
+      }
+      textarea {
+        width: 100%;
+        min-height: 56px;
+        font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding: 6px 8px;
+        border-radius: 6px;
+        box-sizing: border-box;
+        resize: vertical;
+      }
+      .section {
+        border-top: 1px solid #ececec;
+        padding-top: 10px;
+        margin-top: 12px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      .row label {
+        margin: 0;
+        flex: 1;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      button {
+        padding: 6px 10px;
+        font: inherit;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
+      button:hover { filter: brightness(1.05); }
+      .status {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #666;
+        min-height: 14px;
+      }
+      .footer {
+        margin-top: 12px;
+        font-size: 10px;
+        color: #888;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ShardPet <span class="badge">v1.0</span></h1>
+
+    <div class="row">
+      <input type="checkbox" id="enabled" />
+      <label for="enabled">Enable wandering Pokémon</label>
+    </div>
+
+    <label for="count">Count <output id="count-out"></output></label>
+    <input type="range" id="count" min="1" max="3" step="1" />
+
+    <label for="size">Size <output id="size-out"></output></label>
+    <input type="range" id="size" min="24" max="128" step="2" />
+
+    <label for="offset">Bottom offset <output id="offset-out"></output></label>
+    <input type="range" id="offset" min="0" max="40" step="1" />
+
+    <label for="speed">Speed</label>
+    <select id="speed">
+      <option value="slow">slow</option>
+      <option value="normal">normal</option>
+      <option value="fast">fast</option>
+    </select>
+
+    <label for="reduced">Reduced motion</label>
+    <select id="reduced">
+      <option value="auto">auto (follow OS)</option>
+      <option value="off">off</option>
+      <option value="on">on</option>
+    </select>
+
+    <label for="blacklist">Blacklist (one host per line)</label>
+    <textarea id="blacklist" placeholder="mail.example.com"></textarea>
+
+    <div class="section">
+      <h2>Productivity nag</h2>
+
+      <div class="row">
+        <input type="checkbox" id="nag-enabled" />
+        <label for="nag-enabled">"Get back to work!" overlay</label>
+      </div>
+
+      <label for="threshold">Trigger after <output id="threshold-out"></output></label>
+      <input type="range" id="threshold" min="1" max="60" step="1" />
+
+      <label for="allowlist">Allowlist (one host per line)</label>
+      <textarea id="allowlist" placeholder="github.com&#10;docs.example.com"></textarea>
+
+      <div class="row">
+        <input type="checkbox" id="indicator" />
+        <label for="indicator">Show live timer pill</label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="resync">Resync sprites</button>
+      <button id="reset-timers" type="button">Reset timers</button>
+    </div>
+    <div class="status" id="status"></div>
+
+    <p class="footer">
+      Pokémon sprites © Nintendo / Game Freak / Creatures Inc. Fetched at runtime from PokéAPI's CDN; not redistributed by this extension.
+    </p>
+
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

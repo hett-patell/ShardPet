@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [crx({ manifest })],
   build: {
     target: "esnext",
-    rollupOptions: { input: { options: "src/options/index.html" } }
+    rollupOptions: { input: { popup: "src/popup/index.html" } }
   },
   test: {
     environment: "jsdom",

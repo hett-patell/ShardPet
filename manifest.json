@@ -19,5 +19,8 @@
       "all_frames": false
     }
   ],
-  "options_page": "src/options/index.html"
+  "action": {
+    "default_title": "ShardPet",
+    "default_popup": "src/popup/index.html"
+  }
 }
