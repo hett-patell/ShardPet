@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>poke-shard options</title>
+    <style>
+      body { font: 14px/1.5 system-ui, sans-serif; max-width: 640px; margin: 32px auto; padding: 0 16px; }
+      h1 { margin-top: 0; }
+      label { display: block; margin: 16px 0 4px; font-weight: 600; }
+      input[type="range"] { width: 100%; }
+      textarea { width: 100%; min-height: 80px; font-family: monospace; }
+      button { padding: 8px 12px; cursor: pointer; }
+      .row { display: flex; gap: 12px; align-items: center; }
+      .status { margin-left: 12px; color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>poke-shard</h1>
+
+    <div class="row">
+      <input type="checkbox" id="enabled" />
+      <label for="enabled">Enabled</label>
+    </div>
+
+    <label for="count">Number of Pokémon: <output id="count-out"></output></label>
+    <input type="range" id="count" min="1" max="3" step="1" />
+
+    <label for="size">Size (px): <output id="size-out"></output></label>
+    <input type="range" id="size" min="24" max="64" step="2" />
+
+    <label for="offset">Vertical offset (px): <output id="offset-out"></output></label>
+    <input type="range" id="offset" min="0" max="40" step="1" />
+
+    <label for="speed">Speed</label>
+    <select id="speed">
+      <option value="slow">slow</option>
+      <option value="normal">normal</option>
+      <option value="fast">fast</option>
+    </select>
+
+    <label for="reduced">Reduced motion</label>
+    <select id="reduced">
+      <option value="auto">auto (follow OS)</option>
+      <option value="off">off</option>
+      <option value="on">on</option>
+    </select>
+
+    <label for="blacklist">Blacklist (one hostname per line)</label>
+    <textarea id="blacklist" placeholder="mail.example.com"></textarea>
+
+    <div class="row" style="margin-top:24px">
+      <button id="resync">Resync sprites</button>
+      <span class="status" id="status"></span>
+    </div>
+
+    <p style="margin-top:32px;color:#666;font-size:12px">
+      Pokémon sprites © Nintendo / Game Freak / Creatures Inc. Fetched at runtime from PokéAPI's public CDN. Not redistributed by this extension.
+    </p>
+
+    <script type="module" src="./options.ts"></script>
+  </body>
+</html>
