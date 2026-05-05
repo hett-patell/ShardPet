@@ -4,8 +4,19 @@ export type OverlayHandles = {
   destroy: () => void;
 };
 
+function shuffled<T>(arr: ReadonlyArray<T>): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = out[i] as T;
+    out[i] = out[j] as T;
+    out[j] = tmp;
+  }
+  return out;
+}
+
 export function mountOverlay(args: {
-  spriteDataUrl: string;
+  spriteDataUrls: ReadonlyArray<string>;
   hostname: string;
   thresholdMinutes: number;
   onDismiss: () => void;
@@ -26,12 +37,6 @@ export function mountOverlay(args: {
   const card = document.createElement("div");
   card.className = "nag-card";
 
-  const sprite = document.createElement("img");
-  sprite.className = "nag-sprite";
-  sprite.src = args.spriteDataUrl;
-  sprite.alt = "";
-  sprite.draggable = false;
-
   const title = document.createElement("div");
   title.className = "nag-title";
   title.textContent = "Get back to work!";
@@ -40,14 +45,27 @@ export function mountOverlay(args: {
   subtitle.className = "nag-subtitle";
   subtitle.textContent = `${args.hostname} isn't on your allowlist. You've been here ${args.thresholdMinutes}+ minutes.`;
 
+  const grid = document.createElement("div");
+  grid.className = "nag-grid";
+  const urls = shuffled(args.spriteDataUrls);
+  for (let i = 0; i < urls.length; i++) {
+    const img = document.createElement("img");
+    img.className = "nag-grid-sprite";
+    img.src = urls[i] as string;
+    img.alt = "";
+    img.draggable = false;
+    img.style.animationDelay = `${(i % 8) * 120}ms`;
+    grid.appendChild(img);
+  }
+
   const button = document.createElement("button");
   button.className = "nag-dismiss";
   button.type = "button";
   button.textContent = "Dismiss (Esc)";
 
-  card.appendChild(sprite);
   card.appendChild(title);
   card.appendChild(subtitle);
+  card.appendChild(grid);
   card.appendChild(button);
 
   backdrop.appendChild(card);

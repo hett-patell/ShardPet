@@ -298,14 +298,11 @@ function triggerNagOverlay(): void {
   if (!settings) return;
   if (!cache || Object.keys(cache.byId).length === 0) return;
 
-  const ids = Object.keys(cache.byId).map(Number);
-  if (ids.length === 0) return;
-  const id = ids[Math.floor(Math.random() * ids.length)] as number;
-  const url = cache.byId[id];
-  if (!url) return;
+  const urls = Object.values(cache.byId).filter((u): u is string => typeof u === "string");
+  if (urls.length === 0) return;
 
   overlayHandles = mountOverlay({
-    spriteDataUrl: url,
+    spriteDataUrls: urls,
     hostname: location.hostname,
     thresholdMinutes: settings.workThresholdMinutes,
     onDismiss: () => {
