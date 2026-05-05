@@ -4,8 +4,11 @@
 
 # ShardPet
 
-<img width="2172" height="724" alt="image" src="https://github.com/user-attachments/assets/9d0c6cf4-c15c-4d26-927c-2e57ee2cbfe7" />
-<br>
+<p align="center">
+    <picture>
+        <img src="https://github.com/user-attachments/assets/c63b75ab-a529-4bd8-855d-ef15ae4a65a9" alt="ShardPass" width="500">
+    </picture>
+</p>
 
 **A team of tiny, judgy Pokémon who live in your browser, watch you scroll, and stage a fullscreen intervention when you've been on Reddit for forty-five minutes.**
 
