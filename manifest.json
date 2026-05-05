@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "poke-shard",
+  "version": "0.1.0",
+  "description": "Tiny pixel Pokemon wandering along the bottom of your screen.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://raw.githubusercontent.com/PokeAPI/sprites/*"
+  ],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.ts"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "options_page": "src/options/index.html"
+}
