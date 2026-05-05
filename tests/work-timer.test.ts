@@ -126,12 +126,29 @@ describe("applyDismiss", () => {
     expect(out.cooldownUntilMs).toBe(1_000_000 + 300_000);
   });
 
-  test("does not erase the per-hostname counter", () => {
+  test("preserves other hostnames' counters", () => {
+    const state = {
+      hostnamesElapsed: { "reddit.com": 320, "twitter.com": 200 },
+      cooldownUntilMs: 0
+    };
+    const out = applyDismiss(state, {
+      nowMs: 1_000_000,
+      cooldownSeconds: 300,
+      hostname: "reddit.com"
+    });
+    expect(out.hostnamesElapsed["twitter.com"]).toBe(200);
+  });
+
+  test("resets the dismissed hostname's counter so cooldown end doesn't re-trigger immediately", () => {
     const state = {
       hostnamesElapsed: { "reddit.com": 320 },
       cooldownUntilMs: 0
     };
-    const out = applyDismiss(state, { nowMs: 1_000_000, cooldownSeconds: 300 });
-    expect(out.hostnamesElapsed["reddit.com"]).toBe(320);
+    const out = applyDismiss(state, {
+      nowMs: 1_000_000,
+      cooldownSeconds: 300,
+      hostname: "reddit.com"
+    });
+    expect(out.hostnamesElapsed["reddit.com"]).toBeUndefined();
   });
 });

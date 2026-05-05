@@ -49,10 +49,14 @@ let cache: SpriteCache | null = null;
 let workTimers: WorkTimers = { ...DEFAULT_WORK_TIMERS };
 let workTickIntervalId: ReturnType<typeof setInterval> | null = null;
 let lastVisibleTickMs = 0;
+let lastWorkPersistMs = 0;
+let workTimersDirty = false;
 let overlayHandles: OverlayHandles | null = null;
+let suppressNextStorageEvent = false;
 
 const FRAME_BUDGET_MS = 1000 / 30;
 const WORK_TICK_INTERVAL_MS = 5_000;
+const WORK_PERSIST_INTERVAL_MS = 30_000;
 const DISMISS_COOLDOWN_SECONDS = 5 * 60;
 
 async function main(): Promise<void> {
@@ -60,7 +64,7 @@ async function main(): Promise<void> {
   cache = await loadSpriteCache();
   workTimers = await loadWorkTimers();
 
-  startWorkTimer();
+  syncWorkTimerLifecycle();
 
   if (!settings.enabled) {
     attachLifecycle();
@@ -77,6 +81,15 @@ async function main(): Promise<void> {
 
   mount(settings, cache);
   attachLifecycle();
+}
+
+function syncWorkTimerLifecycle(): void {
+  const shouldRun =
+    !!settings &&
+    settings.productivityNagEnabled &&
+    document.visibilityState !== "hidden";
+  if (shouldRun) startWorkTimer();
+  else pauseWorkTimer();
 }
 
 function isBlacklisted(s: Settings, hostname: string): boolean {
@@ -215,7 +228,7 @@ function attachLifecycle(): void {
       pauseWorkTimer();
     } else {
       startLoop();
-      resumeWorkTimer();
+      syncWorkTimerLifecycle();
     }
   });
 
@@ -236,41 +249,39 @@ function attachLifecycle(): void {
       void reloadCache();
     }
     if (changes.workTimers && changes.workTimers.newValue) {
-      workTimers = changes.workTimers.newValue as WorkTimers;
+      if (suppressNextStorageEvent) {
+        suppressNextStorageEvent = false;
+      } else {
+        workTimers = changes.workTimers.newValue as WorkTimers;
+      }
     }
   });
 }
 
 function startWorkTimer(): void {
   if (workTickIntervalId !== null) return;
-  if (document.visibilityState === "hidden") {
-    console.info("[ShardPet] timer not started (tab hidden); will start on visibilitychange");
-    return;
-  }
+  if (!settings || !settings.productivityNagEnabled) return;
+  if (document.visibilityState === "hidden") return;
   lastVisibleTickMs = performance.now();
   workTickIntervalId = setInterval(() => void runWorkTick(), WORK_TICK_INTERVAL_MS);
-  console.info(`[ShardPet] timer started, tick every ${WORK_TICK_INTERVAL_MS}ms`);
 }
 
 function pauseWorkTimer(): void {
   if (workTickIntervalId === null) return;
-  void runWorkTick();
+  void runWorkTick({ forcePersist: true });
   clearInterval(workTickIntervalId);
   workTickIntervalId = null;
 }
 
-function resumeWorkTimer(): void {
-  if (workTickIntervalId !== null) return;
-  lastVisibleTickMs = performance.now();
-  workTickIntervalId = setInterval(() => void runWorkTick(), WORK_TICK_INTERVAL_MS);
-  console.info("[ShardPet] timer resumed");
+async function persistWorkTimers(): Promise<void> {
+  workTimersDirty = false;
+  lastWorkPersistMs = performance.now();
+  suppressNextStorageEvent = true;
+  await saveWorkTimers(workTimers);
 }
 
-async function runWorkTick(): Promise<void> {
-  if (!settings) {
-    console.info("[ShardPet] tick skipped: settings not loaded");
-    return;
-  }
+async function runWorkTick(opts?: { forcePersist?: boolean }): Promise<void> {
+  if (!settings) return;
   if (!settings.productivityNagEnabled) return;
   if (overlayHandles) return;
 
@@ -293,18 +304,21 @@ async function runWorkTick(): Promise<void> {
   });
 
   workTimers = result.state;
-  await saveWorkTimers(workTimers);
+  if (deltaSeconds > 0) workTimersDirty = true;
 
   const accumulated = workTimers.hostnamesElapsed[hostname] ?? 0;
   const cooldownRemainingMs = Math.max(0, workTimers.cooldownUntilMs - Date.now());
-  console.info(
-    `[ShardPet] tick host=${hostname} allowlisted=${isAllowlisted} ` +
-    `accumulated=${accumulated.toFixed(0)}s threshold=${thresholdSeconds}s ` +
-    `cooldownLeft=${(cooldownRemainingMs / 1000).toFixed(0)}s ` +
-    `trigger=${result.shouldTrigger}`
-  );
 
   updateIndicator(hostname, isAllowlisted, accumulated, thresholdSeconds, cooldownRemainingMs);
+
+  const shouldFlush =
+    workTimersDirty &&
+    (opts?.forcePersist ||
+      result.shouldTrigger ||
+      now - lastWorkPersistMs >= WORK_PERSIST_INTERVAL_MS);
+  if (shouldFlush) {
+    await persistWorkTimers();
+  }
 
   if (result.shouldTrigger) {
     triggerNagOverlay();
@@ -403,17 +417,36 @@ function triggerNagOverlay(): void {
       overlayHandles = null;
       workTimers = applyDismiss(workTimers, {
         nowMs: Date.now(),
-        cooldownSeconds: DISMISS_COOLDOWN_SECONDS
+        cooldownSeconds: DISMISS_COOLDOWN_SECONDS,
+        hostname: location.hostname
       });
-      void saveWorkTimers(workTimers);
+      workTimersDirty = true;
+      void persistWorkTimers();
     }
   });
 }
 
+function visualSettingsChanged(prev: Settings | null, next: Settings): boolean {
+  if (!prev) return true;
+  return (
+    prev.enabled !== next.enabled ||
+    prev.count !== next.count ||
+    prev.sizePx !== next.sizePx ||
+    prev.verticalOffsetPx !== next.verticalOffsetPx ||
+    prev.speed !== next.speed ||
+    prev.reducedMotion !== next.reducedMotion ||
+    prev.blacklist.join("|") !== next.blacklist.join("|")
+  );
+}
+
 async function reloadSettings(): Promise<void> {
   const s = await loadSettings();
+  const prev = settings;
   settings = s;
+
   if (!s.showTimerIndicator) teardownIndicator();
+  syncWorkTimerLifecycle();
+
   if (!s.enabled || isBlacklisted(s, location.hostname)) {
     teardown();
     return;
@@ -422,10 +455,21 @@ async function reloadSettings(): Promise<void> {
     if (cache) mount(s, cache);
     return;
   }
+  if (!visualSettingsChanged(prev, s)) return;
+
   baseSpeed = speedForSetting(s.speed);
   applyReducedMotion(s, baseSpeed);
   applyLaneHeight(s);
-  if (cache) spawnPokemons(s, cache);
+
+  const needsRespawn =
+    !prev || prev.count !== s.count || prev.sizePx !== s.sizePx;
+  if (cache && needsRespawn) {
+    spawnPokemons(s, cache);
+  } else if (prev && prev.verticalOffsetPx !== s.verticalOffsetPx) {
+    for (const p of pokemons) {
+      p.el.style.setProperty("--poke-bottom", `${s.verticalOffsetPx}px`);
+    }
+  }
 }
 
 async function reloadCache(): Promise<void> {

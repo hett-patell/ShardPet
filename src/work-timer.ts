@@ -41,10 +41,14 @@ export function tickWorkTimer(state: WorkTimers, input: WorkTimerInput): WorkTim
 
 export function applyDismiss(
   state: WorkTimers,
-  input: { nowMs: number; cooldownSeconds: number }
+  input: { nowMs: number; cooldownSeconds: number; hostname?: string }
 ): WorkTimers {
+  const hostnamesElapsed = { ...state.hostnamesElapsed };
+  if (input.hostname) {
+    delete hostnamesElapsed[input.hostname];
+  }
   return {
-    hostnamesElapsed: { ...state.hostnamesElapsed },
+    hostnamesElapsed,
     cooldownUntilMs: input.nowMs + input.cooldownSeconds * 1000
   };
 }
