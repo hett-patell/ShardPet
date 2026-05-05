@@ -227,9 +227,13 @@ function attachLifecycle(): void {
 
 function startWorkTimer(): void {
   if (workTickIntervalId !== null) return;
-  if (document.visibilityState === "hidden") return;
+  if (document.visibilityState === "hidden") {
+    console.info("[ShardPet] timer not started (tab hidden); will start on visibilitychange");
+    return;
+  }
   lastVisibleTickMs = performance.now();
   workTickIntervalId = setInterval(() => void runWorkTick(), WORK_TICK_INTERVAL_MS);
+  console.info(`[ShardPet] timer started, tick every ${WORK_TICK_INTERVAL_MS}ms`);
 }
 
 function pauseWorkTimer(): void {
@@ -243,10 +247,14 @@ function resumeWorkTimer(): void {
   if (workTickIntervalId !== null) return;
   lastVisibleTickMs = performance.now();
   workTickIntervalId = setInterval(() => void runWorkTick(), WORK_TICK_INTERVAL_MS);
+  console.info("[ShardPet] timer resumed");
 }
 
 async function runWorkTick(): Promise<void> {
-  if (!settings) return;
+  if (!settings) {
+    console.info("[ShardPet] tick skipped: settings not loaded");
+    return;
+  }
   if (!settings.productivityNagEnabled) return;
   if (overlayHandles) return;
 
@@ -270,6 +278,15 @@ async function runWorkTick(): Promise<void> {
 
   workTimers = result.state;
   await saveWorkTimers(workTimers);
+
+  const accumulated = workTimers.hostnamesElapsed[hostname] ?? 0;
+  const cooldownRemainingMs = Math.max(0, workTimers.cooldownUntilMs - Date.now());
+  console.info(
+    `[ShardPet] tick host=${hostname} allowlisted=${isAllowlisted} ` +
+    `accumulated=${accumulated.toFixed(0)}s threshold=${thresholdSeconds}s ` +
+    `cooldownLeft=${(cooldownRemainingMs / 1000).toFixed(0)}s ` +
+    `trigger=${result.shouldTrigger}`
+  );
 
   if (result.shouldTrigger) {
     triggerNagOverlay();

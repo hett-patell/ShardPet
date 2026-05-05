@@ -1,4 +1,11 @@
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from "../storage";
+import {
+  DEFAULT_SETTINGS,
+  DEFAULT_WORK_TIMERS,
+  loadSettings,
+  saveSettings,
+  saveWorkTimers,
+  type Settings
+} from "../storage";
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -21,6 +28,7 @@ const thresholdEl = $<HTMLInputElement>("threshold");
 const thresholdOut = $<HTMLOutputElement>("threshold-out");
 const allowlistEl = $<HTMLTextAreaElement>("allowlist");
 const resyncBtn = $<HTMLButtonElement>("resync");
+const resetTimersBtn = $<HTMLButtonElement>("reset-timers");
 const statusEl = $<HTMLSpanElement>("status");
 
 function applyToForm(s: Settings): void {
@@ -80,6 +88,18 @@ for (const el of formEls) {
     });
   }
 }
+
+resetTimersBtn.addEventListener("click", async () => {
+  resetTimersBtn.disabled = true;
+  try {
+    await saveWorkTimers({ ...DEFAULT_WORK_TIMERS });
+    statusEl.textContent = "Work-timer state cleared.";
+  } catch (e) {
+    statusEl.textContent = `Error: ${String(e)}`;
+  } finally {
+    resetTimersBtn.disabled = false;
+  }
+});
 
 resyncBtn.addEventListener("click", async () => {
   resyncBtn.disabled = true;

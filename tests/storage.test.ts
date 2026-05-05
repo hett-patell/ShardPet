@@ -12,7 +12,7 @@ describe("DEFAULT_SETTINGS", () => {
     expect(DEFAULT_SETTINGS).toEqual({
       enabled: true,
       count: 1,
-      sizePx: 56,
+      sizePx: 80,
       speed: "normal",
       verticalOffsetPx: 8,
       blacklist: [],
@@ -43,9 +43,9 @@ describe("mergeSettings", () => {
     expect(mergeSettings({ count: 9 as 1 }).count).toBe(3);
   });
 
-  test("clamps sizePx to 24..64", () => {
+  test("clamps sizePx to 24..128", () => {
     expect(mergeSettings({ sizePx: 10 }).sizePx).toBe(24);
-    expect(mergeSettings({ sizePx: 999 }).sizePx).toBe(64);
+    expect(mergeSettings({ sizePx: 999 }).sizePx).toBe(128);
   });
 
   test("preserves non-empty blacklist arrays", () => {

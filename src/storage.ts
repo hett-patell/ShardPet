@@ -30,7 +30,7 @@ export const CURRENT_CACHE_VERSION = 1;
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   count: 1,
-  sizePx: 56,
+  sizePx: 80,
   speed: "normal",
   verticalOffsetPx: 8,
   blacklist: [],
@@ -50,7 +50,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n
 export function mergeSettings(partial: Partial<Settings> | undefined): Settings {
   const s = { ...DEFAULT_SETTINGS, ...(partial ?? {}) };
   const count = clamp(s.count, 1, 3) as 1 | 2 | 3;
-  const sizePx = clamp(s.sizePx, 24, 64);
+  const sizePx = clamp(s.sizePx, 24, 128);
   const verticalOffsetPx = clamp(s.verticalOffsetPx, 0, 40);
   const blacklist = Array.isArray(s.blacklist) ? s.blacklist.filter(x => typeof x === "string") : [];
   const allowlist = Array.isArray(s.allowlist) ? s.allowlist.filter(x => typeof x === "string") : [];
