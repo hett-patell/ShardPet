@@ -1,0 +1,34 @@
+:host {
+  all: initial;
+}
+
+.poke-lane {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80px;
+  pointer-events: none;
+  z-index: 2147483647;
+  overflow: hidden;
+}
+
+.poke {
+  position: absolute;
+  bottom: var(--poke-bottom, 8px);
+  left: 0;
+  width: var(--poke-size, 40px);
+  height: var(--poke-size, 40px);
+  pointer-events: auto;
+  cursor: pointer;
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poke[data-respect-reduced-motion="true"] {
+    transition: none;
+  }
+}
