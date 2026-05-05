@@ -1,10 +1,11 @@
 # ShardPet
 
-A tiny Chromium extension that puts pixel Pokémon walking along the bottom of every web page you visit.
+A tiny Chromium extension that puts pixel Pokémon walking along the bottom of every web page you visit — and gently shouts at you when you stay on time-wasters too long.
 
 - 1–3 Pokémon (default 1)
 - Configurable size, speed, vertical offset
-- Per-site blacklist
+- Per-site blacklist (no Pokémon)
+- Per-site **allowlist** + **"Get back to work!"** overlay after N minutes on a non-allowlisted site (default 5)
 - Pause when tab is hidden
 - Shadow-DOM isolated; doesn't break page CSS or click handlers
 
@@ -21,6 +22,11 @@ On first install the extension fetches a curated set of Gen 5 BW animated GIFs f
 ## Configure
 
 Right-click the extension icon → **Options**, or visit `chrome-extension://<id>/src/options/index.html`.
+
+The Options page has two sections:
+
+- **Pokémon controls** — enable, count, size, speed, vertical offset, blacklist (don't show on these sites), reduced motion.
+- **Productivity nag** — enable, trigger threshold in minutes, and an allowlist of sites you're allowed to use without nagging. After spending the threshold time on any non-allowlisted hostname (cumulative across that hostname's pages), a fullscreen "Get back to work!" overlay appears with a huge Pokémon. Click anywhere or press **Esc** to dismiss; there's a 5-minute cooldown after dismiss before it can re-trigger.
 
 ## Performance
 

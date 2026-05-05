@@ -45,8 +45,21 @@
       <option value="on">on</option>
     </select>
 
-    <label for="blacklist">Blacklist (one hostname per line)</label>
+    <label for="blacklist">Blacklist — Pokémon won't appear (one hostname per line)</label>
     <textarea id="blacklist" placeholder="mail.example.com"></textarea>
+
+    <h2 style="margin-top:32px;font-size:18px">Productivity nag</h2>
+
+    <div class="row">
+      <input type="checkbox" id="nag-enabled" />
+      <label for="nag-enabled">Show "Get back to work!" overlay on non-allowlisted sites</label>
+    </div>
+
+    <label for="threshold">Trigger after (minutes): <output id="threshold-out"></output></label>
+    <input type="range" id="threshold" min="1" max="60" step="1" />
+
+    <label for="allowlist">Allowlist — sites you're allowed to use without nagging (one hostname per line)</label>
+    <textarea id="allowlist" placeholder="github.com&#10;docs.example.com"></textarea>
 
     <div class="row" style="margin-top:24px">
       <button id="resync">Resync sprites</button>

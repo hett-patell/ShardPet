@@ -16,6 +16,10 @@ const offsetOut = $<HTMLOutputElement>("offset-out");
 const speedEl = $<HTMLSelectElement>("speed");
 const reducedEl = $<HTMLSelectElement>("reduced");
 const blacklistEl = $<HTMLTextAreaElement>("blacklist");
+const nagEnabledEl = $<HTMLInputElement>("nag-enabled");
+const thresholdEl = $<HTMLInputElement>("threshold");
+const thresholdOut = $<HTMLOutputElement>("threshold-out");
+const allowlistEl = $<HTMLTextAreaElement>("allowlist");
 const resyncBtn = $<HTMLButtonElement>("resync");
 const statusEl = $<HTMLSpanElement>("status");
 
@@ -30,7 +34,14 @@ function applyToForm(s: Settings): void {
   speedEl.value = s.speed;
   reducedEl.value = s.reducedMotion;
   blacklistEl.value = s.blacklist.join("\n");
+  nagEnabledEl.checked = s.productivityNagEnabled;
+  thresholdEl.value = String(s.workThresholdMinutes);
+  thresholdOut.value = `${s.workThresholdMinutes} min`;
+  allowlistEl.value = s.allowlist.join("\n");
 }
+
+const splitLines = (text: string): string[] =>
+  text.split("\n").map(s => s.trim()).filter(s => s.length > 0);
 
 function readForm(): Settings {
   return {
@@ -40,10 +51,10 @@ function readForm(): Settings {
     verticalOffsetPx: Number(offsetEl.value),
     speed: speedEl.value as Settings["speed"],
     reducedMotion: reducedEl.value as Settings["reducedMotion"],
-    blacklist: blacklistEl.value
-      .split("\n")
-      .map(s => s.trim())
-      .filter(s => s.length > 0)
+    blacklist: splitLines(blacklistEl.value),
+    allowlist: splitLines(allowlistEl.value),
+    productivityNagEnabled: nagEnabledEl.checked,
+    workThresholdMinutes: Number(thresholdEl.value)
   };
 }
 
@@ -53,13 +64,19 @@ async function persist(): Promise<void> {
   applyToForm(s);
 }
 
-for (const el of [enabledEl, countEl, sizeEl, offsetEl, speedEl, reducedEl, blacklistEl]) {
+const formEls: HTMLElement[] = [
+  enabledEl, countEl, sizeEl, offsetEl, speedEl, reducedEl, blacklistEl,
+  nagEnabledEl, thresholdEl, allowlistEl
+];
+
+for (const el of formEls) {
   el.addEventListener("change", () => void persist());
   if (el instanceof HTMLInputElement && el.type === "range") {
     el.addEventListener("input", () => {
       if (el === countEl) countOut.value = countEl.value;
       if (el === sizeEl) sizeOut.value = `${sizeEl.value}px`;
       if (el === offsetEl) offsetOut.value = `${offsetEl.value}px`;
+      if (el === thresholdEl) thresholdOut.value = `${thresholdEl.value} min`;
     });
   }
 }

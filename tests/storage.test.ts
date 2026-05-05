@@ -8,15 +8,18 @@ import {
 } from "../src/storage";
 
 describe("DEFAULT_SETTINGS", () => {
-  test("matches the spec defaults", () => {
+  test("matches the current defaults", () => {
     expect(DEFAULT_SETTINGS).toEqual({
       enabled: true,
       count: 1,
-      sizePx: 40,
+      sizePx: 56,
       speed: "normal",
       verticalOffsetPx: 8,
       blacklist: [],
-      reducedMotion: "auto"
+      reducedMotion: "auto",
+      allowlist: [],
+      productivityNagEnabled: true,
+      workThresholdMinutes: 5
     });
   });
 });
@@ -48,6 +51,16 @@ describe("mergeSettings", () => {
   test("preserves non-empty blacklist arrays", () => {
     const merged = mergeSettings({ blacklist: ["mail.example.com"] });
     expect(merged.blacklist).toEqual(["mail.example.com"]);
+  });
+
+  test("preserves non-empty allowlist arrays", () => {
+    const merged = mergeSettings({ allowlist: ["github.com", "docs.example.com"] });
+    expect(merged.allowlist).toEqual(["github.com", "docs.example.com"]);
+  });
+
+  test("clamps workThresholdMinutes to 1..120", () => {
+    expect(mergeSettings({ workThresholdMinutes: 0 }).workThresholdMinutes).toBe(1);
+    expect(mergeSettings({ workThresholdMinutes: 9999 }).workThresholdMinutes).toBe(120);
   });
 });
 

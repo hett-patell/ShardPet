@@ -1,8 +1,12 @@
 import {
+  DEFAULT_WORK_TIMERS,
   loadSettings,
   loadSpriteCache,
+  loadWorkTimers,
+  saveWorkTimers,
   type Settings,
-  type SpriteCache
+  type SpriteCache,
+  type WorkTimers
 } from "./storage";
 import {
   initialWanderState,
@@ -11,6 +15,12 @@ import {
   speedForSetting,
   type WanderState
 } from "./wander";
+import {
+  applyDismiss,
+  isHostnameMatched,
+  tickWorkTimer
+} from "./work-timer";
+import { mountOverlay, type OverlayHandles } from "./overlay";
 import stylesText from "./styles.css?raw";
 
 if (window.top === window.self && !document.documentElement.dataset.shardpetMounted) {
@@ -34,14 +44,34 @@ let baseSpeed = 50;
 let settings: Settings | null = null;
 let cache: SpriteCache | null = null;
 
+let workTimers: WorkTimers = { ...DEFAULT_WORK_TIMERS };
+let workTickIntervalId: ReturnType<typeof setInterval> | null = null;
+let lastVisibleTickMs = 0;
+let overlayHandles: OverlayHandles | null = null;
+
 const FRAME_BUDGET_MS = 1000 / 30;
+const WORK_TICK_INTERVAL_MS = 5_000;
+const DISMISS_COOLDOWN_SECONDS = 5 * 60;
 
 async function main(): Promise<void> {
   settings = await loadSettings();
   cache = await loadSpriteCache();
-  if (!settings.enabled) return;
-  if (isBlacklisted(settings, location.hostname)) return;
-  if (!cache || Object.keys(cache.byId).length === 0) return;
+  workTimers = await loadWorkTimers();
+
+  startWorkTimer();
+
+  if (!settings.enabled) {
+    attachLifecycle();
+    return;
+  }
+  if (isBlacklisted(settings, location.hostname)) {
+    attachLifecycle();
+    return;
+  }
+  if (!cache || Object.keys(cache.byId).length === 0) {
+    attachLifecycle();
+    return;
+  }
 
   mount(settings, cache);
   attachLifecycle();
@@ -165,13 +195,20 @@ function stopLoop(): void {
 
 function attachLifecycle(): void {
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") stopLoop();
-    else startLoop();
+    if (document.visibilityState === "hidden") {
+      stopLoop();
+      pauseWorkTimer();
+    } else {
+      startLoop();
+      resumeWorkTimer();
+    }
   });
 
   window.addEventListener("pagehide", () => {
     stopLoop();
+    pauseWorkTimer();
     if (host) host.remove();
+    if (overlayHandles) overlayHandles.destroy();
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -181,6 +218,86 @@ function attachLifecycle(): void {
     }
     if (changes.spriteCache) {
       void reloadCache();
+    }
+    if (changes.workTimers && changes.workTimers.newValue) {
+      workTimers = changes.workTimers.newValue as WorkTimers;
+    }
+  });
+}
+
+function startWorkTimer(): void {
+  if (workTickIntervalId !== null) return;
+  if (document.visibilityState === "hidden") return;
+  lastVisibleTickMs = performance.now();
+  workTickIntervalId = setInterval(() => void runWorkTick(), WORK_TICK_INTERVAL_MS);
+}
+
+function pauseWorkTimer(): void {
+  if (workTickIntervalId === null) return;
+  void runWorkTick();
+  clearInterval(workTickIntervalId);
+  workTickIntervalId = null;
+}
+
+function resumeWorkTimer(): void {
+  if (workTickIntervalId !== null) return;
+  lastVisibleTickMs = performance.now();
+  workTickIntervalId = setInterval(() => void runWorkTick(), WORK_TICK_INTERVAL_MS);
+}
+
+async function runWorkTick(): Promise<void> {
+  if (!settings) return;
+  if (!settings.productivityNagEnabled) return;
+  if (overlayHandles) return;
+
+  const now = performance.now();
+  const deltaSeconds = Math.max(0, (now - lastVisibleTickMs) / 1000);
+  lastVisibleTickMs = now;
+
+  const hostname = location.hostname;
+  if (!hostname) return;
+
+  const isAllowlisted = isHostnameMatched(hostname, settings.allowlist);
+  const thresholdSeconds = settings.workThresholdMinutes * 60;
+
+  const result = tickWorkTimer(workTimers, {
+    hostname,
+    isAllowlisted,
+    deltaSeconds,
+    nowMs: Date.now(),
+    thresholdSeconds
+  });
+
+  workTimers = result.state;
+  await saveWorkTimers(workTimers);
+
+  if (result.shouldTrigger) {
+    triggerNagOverlay();
+  }
+}
+
+function triggerNagOverlay(): void {
+  if (overlayHandles) return;
+  if (!settings) return;
+  if (!cache || Object.keys(cache.byId).length === 0) return;
+
+  const ids = Object.keys(cache.byId).map(Number);
+  if (ids.length === 0) return;
+  const id = ids[Math.floor(Math.random() * ids.length)] as number;
+  const url = cache.byId[id];
+  if (!url) return;
+
+  overlayHandles = mountOverlay({
+    spriteDataUrl: url,
+    hostname: location.hostname,
+    thresholdMinutes: settings.workThresholdMinutes,
+    onDismiss: () => {
+      overlayHandles = null;
+      workTimers = applyDismiss(workTimers, {
+        nowMs: Date.now(),
+        cooldownSeconds: DISMISS_COOLDOWN_SECONDS
+      });
+      void saveWorkTimers(workTimers);
     }
   });
 }
