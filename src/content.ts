@@ -174,6 +174,13 @@ function spawnPokemons(s: Settings, c: SpriteCache): void {
       now: performance.now(),
       rng: Math.random
     });
+
+    // Snorlax stays still — no walking, no hopping
+    if (id === 143) {
+      state.mode = "idle";
+      state.vx = 0;
+    }
+
     pokemons.push({ id, el, state });
   }
 }
@@ -186,6 +193,19 @@ function rerollPokemon(index: number): void {
   if (!url) return;
   p.id = newId;
   p.el.src = url;
+
+  // Snorlax stays still, other pokemon get fresh wander state
+  if (newId === 143) {
+    p.state.mode = "idle";
+    p.state.vx = 0;
+  } else {
+    p.state = initialWanderState({
+      viewportWidth: window.innerWidth,
+      spriteWidth: settings?.sizePx ?? 64,
+      now: performance.now(),
+      rng: Math.random
+    });
+  }
 }
 
 function startLoop(): void {
@@ -200,15 +220,18 @@ function startLoop(): void {
     if (!settings) return;
     const vw = window.innerWidth;
     for (const p of pokemons) {
-      p.state = stepWanderState(p.state, {
-        dt,
-        viewportWidth: vw,
-        spriteWidth: settings.sizePx,
-        now,
-        rng: Math.random,
-        baseSpeed
-      });
-      const yOff = hopOffsetPx(p.state, now);
+      // Snorlax doesn't move — skip wander step
+      if (p.id !== 143) {
+        p.state = stepWanderState(p.state, {
+          dt,
+          viewportWidth: vw,
+          spriteWidth: settings.sizePx,
+          now,
+          rng: Math.random,
+          baseSpeed
+        });
+      }
+      const yOff = p.id !== 143 ? hopOffsetPx(p.state, now) : 0;
       const flip = p.state.dir === -1 ? -1 : 1;
       p.el.style.transform = `translate3d(${p.state.x}px, ${yOff}px, 0) scaleX(${flip})`;
     }
