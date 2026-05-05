@@ -32,6 +32,15 @@ const favoritesEl = $<HTMLTextAreaElement>("favorites");
 const resyncBtn = $<HTMLButtonElement>("resync");
 const resetTimersBtn = $<HTMLButtonElement>("reset-timers");
 const statusEl = $<HTMLSpanElement>("status");
+const versionLabel = document.getElementById("version-label");
+
+if (versionLabel) {
+  try {
+    versionLabel.textContent = `v${chrome.runtime.getManifest().version}`;
+  } catch {
+    /* non-extension context (e.g. unit tests) */
+  }
+}
 
 function applyToForm(s: Settings): void {
   enabledEl.checked = s.enabled;
@@ -78,6 +87,8 @@ async function persist(): Promise<void> {
   applyToForm(s);
 }
 
+let settingsHydrated = false;
+
 const formEls: HTMLElement[] = [
   enabledEl, countEl, sizeEl, offsetEl, speedEl, reducedEl, blacklistEl,
   nagEnabledEl, thresholdEl, allowlistEl, indicatorEl, favoritesEl
@@ -123,4 +134,10 @@ resyncBtn.addEventListener("click", async () => {
 (async () => {
   const s = await loadSettings();
   applyToForm({ ...DEFAULT_SETTINGS, ...s });
+  settingsHydrated = true;
 })();
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "hidden" || !settingsHydrated) return;
+  void persist();
+});
