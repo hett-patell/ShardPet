@@ -13,8 +13,8 @@ import {
 } from "./wander";
 import stylesText from "./styles.css?raw";
 
-if (window.top === window.self && !document.documentElement.dataset.pokeShardMounted) {
-  document.documentElement.dataset.pokeShardMounted = "1";
+if (window.top === window.self && !document.documentElement.dataset.shardpetMounted) {
+  document.documentElement.dataset.shardpetMounted = "1";
   void main();
 }
 
@@ -53,7 +53,7 @@ function isBlacklisted(s: Settings, hostname: string): boolean {
 
 function mount(s: Settings, c: SpriteCache): void {
   host = document.createElement("div");
-  host.id = "poke-shard-host";
+  host.id = "shardpet-host";
   host.style.cssText = "all: initial; position: fixed; left: 0; right: 0; bottom: 0; height: 80px; z-index: 2147483647; pointer-events: none;";
   shadow = host.attachShadow({ mode: "closed" });
 

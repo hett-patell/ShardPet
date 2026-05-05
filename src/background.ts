@@ -23,7 +23,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   try {
     await syncSprites();
   } catch (e) {
-    console.warn("[poke-shard] initial sprite sync failed", e);
+    console.warn("[ShardPet] initial sprite sync failed", e);
   }
 });
 
@@ -33,7 +33,7 @@ chrome.runtime.onStartup.addListener(async () => {
   try {
     await syncSprites();
   } catch (e) {
-    console.warn("[poke-shard] startup sprite sync failed", e);
+    console.warn("[ShardPet] startup sprite sync failed", e);
   }
 });
 

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "poke-shard",
+  "name": "ShardPet",
   "version": "0.1.0",
   "description": "Tiny pixel Pokemon wandering along the bottom of your screen.",
   "permissions": ["storage"],

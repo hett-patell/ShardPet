@@ -1,4 +1,4 @@
-# poke-shard
+# ShardPet
 
 A tiny Chromium extension that puts pixel Pokémon walking along the bottom of every web page you visit.
 
