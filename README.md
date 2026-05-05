@@ -32,6 +32,13 @@ ShardPet is designed to be invisible on a CPU profile.
 - Sprites (~24 animated GIFs, total < 1 MB) live in `chrome.storage.local` as data URLs after the one-time fetch.
 - Settings changes only re-create DOM nodes when something visual actually changed (count or size); changing the offset slider patches the existing sprites' CSS variables in place.
 
+## Screenshots
+Pets roaming around -
+<img width="1919" height="1052" alt="image" src="https://github.com/user-attachments/assets/81325f72-c46e-4816-880d-0308c3b0eeea" />
+
+"Get back to work" -
+<img width="1920" height="956" alt="image" src="https://github.com/user-attachments/assets/cbf08e89-bd9d-4176-8c17-6cc8d377ff6b" />
+
 ## Install (developer mode)
 
 1. `npm install`
