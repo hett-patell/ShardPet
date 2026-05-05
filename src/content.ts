@@ -81,10 +81,21 @@ function isBlacklisted(s: Settings, hostname: string): boolean {
   return s.blacklist.some(domain => hostname === domain || hostname.endsWith("." + domain));
 }
 
+function laneHeightPx(s: Settings): number {
+  return Math.max(80, s.sizePx + s.verticalOffsetPx + 16);
+}
+
+function applyLaneHeight(s: Settings): void {
+  if (!host || !lane) return;
+  const h = laneHeightPx(s);
+  host.style.height = `${h}px`;
+  lane.style.height = `${h}px`;
+}
+
 function mount(s: Settings, c: SpriteCache): void {
   host = document.createElement("div");
   host.id = "shardpet-host";
-  host.style.cssText = "all: initial; position: fixed; left: 0; right: 0; bottom: 0; height: 80px; z-index: 2147483647; pointer-events: none;";
+  host.style.cssText = "all: initial; position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483647; pointer-events: none;";
   shadow = host.attachShadow({ mode: "closed" });
 
   const style = document.createElement("style");
@@ -96,6 +107,8 @@ function mount(s: Settings, c: SpriteCache): void {
   shadow.appendChild(lane);
 
   document.documentElement.appendChild(host);
+
+  applyLaneHeight(s);
 
   baseSpeed = speedForSetting(s.speed);
   applyReducedMotion(s, baseSpeed);
@@ -329,6 +342,7 @@ async function reloadSettings(): Promise<void> {
   }
   baseSpeed = speedForSetting(s.speed);
   applyReducedMotion(s, baseSpeed);
+  applyLaneHeight(s);
   if (cache) spawnPokemons(s, cache);
 }
 
