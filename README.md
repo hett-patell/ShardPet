@@ -4,6 +4,9 @@
 
 # ShardPet
 
+<img width="2172" height="724" alt="image" src="https://github.com/user-attachments/assets/9d0c6cf4-c15c-4d26-927c-2e57ee2cbfe7" />
+<br>
+
 **A team of tiny, judgy Pokémon who live in your browser, watch you scroll, and stage a fullscreen intervention when you've been on Reddit for forty-five minutes.**
 
 </div>
