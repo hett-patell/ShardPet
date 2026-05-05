@@ -59,6 +59,9 @@ const WORK_TICK_INTERVAL_MS = 5_000;
 const WORK_PERSIST_INTERVAL_MS = 30_000;
 const DISMISS_COOLDOWN_SECONDS = 5 * 60;
 
+const IMMOBILE_IDS: ReadonlySet<number> = new Set([143]);
+const isImmobile = (id: number): boolean => IMMOBILE_IDS.has(id);
+
 async function main(): Promise<void> {
   settings = await loadSettings();
   cache = await loadSpriteCache();
@@ -175,10 +178,10 @@ function spawnPokemons(s: Settings, c: SpriteCache): void {
       rng: Math.random
     });
 
-    // Snorlax stays still — no walking, no hopping
-    if (id === 143) {
+    if (isImmobile(id)) {
       state.mode = "idle";
       state.vx = 0;
+      state.dir = 1;
     }
 
     pokemons.push({ id, el, state });
@@ -194,14 +197,14 @@ function rerollPokemon(index: number): void {
   p.id = newId;
   p.el.src = url;
 
-  // Snorlax stays still, other pokemon get fresh wander state
-  if (newId === 143) {
+  if (isImmobile(newId)) {
     p.state.mode = "idle";
     p.state.vx = 0;
-  } else {
+    p.state.dir = 1;
+  } else if (settings) {
     p.state = initialWanderState({
       viewportWidth: window.innerWidth,
-      spriteWidth: settings?.sizePx ?? 64,
+      spriteWidth: settings.sizePx,
       now: performance.now(),
       rng: Math.random
     });
@@ -219,9 +222,11 @@ function startLoop(): void {
     lastFrame = now;
     if (!settings) return;
     const vw = window.innerWidth;
+    const maxX = Math.max(0, vw - settings.sizePx);
     for (const p of pokemons) {
-      // Snorlax doesn't move — skip wander step
-      if (p.id !== 143) {
+      if (isImmobile(p.id)) {
+        if (p.state.x > maxX) p.state.x = maxX;
+      } else {
         p.state = stepWanderState(p.state, {
           dt,
           viewportWidth: vw,
@@ -231,7 +236,7 @@ function startLoop(): void {
           baseSpeed
         });
       }
-      const yOff = p.id !== 143 ? hopOffsetPx(p.state, now) : 0;
+      const yOff = isImmobile(p.id) ? 0 : hopOffsetPx(p.state, now);
       const flip = p.state.dir === -1 ? -1 : 1;
       p.el.style.transform = `translate3d(${p.state.x}px, ${yOff}px, 0) scaleX(${flip})`;
     }
