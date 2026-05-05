@@ -9,7 +9,7 @@
   bottom: 0;
   pointer-events: none;
   z-index: 2147483647;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .poke-container {
@@ -30,10 +30,9 @@
   -webkit-user-drag: none;
 }
 
-/* Name tooltip — appears on hover, also shown briefly on click */
 .poke-name {
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 5px);
   left: 50%;
   transform: translateX(-50%);
   font: 600 11px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -45,12 +44,14 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 120ms ease;
-  margin-bottom: 5px;
   text-transform: capitalize;
   letter-spacing: 0.01em;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .poke-container:hover .poke-name,
