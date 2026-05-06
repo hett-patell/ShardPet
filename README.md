@@ -49,7 +49,7 @@ It is also, somehow, designed to use less CPU than your desktop wallpaper.
 - **Toolbar popup** for all settings. No cursed options page. Click the icon, fiddle, leave.
 - **Reduced-motion aware** — auto-detects `prefers-reduced-motion` so it doesn't enrage your vestibular system.
 - **Shadow-DOM isolated** — page CSS can't touch our Pokémon, our Pokémon can't touch page CSS. Diplomatic immunity.
-- **Offline after first install** — sprites are fetched once from PokéAPI's CDN, then cached locally forever (or until you click *Resync*).
+- **All 649 Gen 1–5 Pokémon** included by default — every species the PokéAPI animated BW sprite set covers, fetched once and cached locally forever (or until you hit *Resync*).
 
 ## Why your laptop won't catch fire
 
@@ -61,7 +61,7 @@ ShardPet is engineered to be invisible on a CPU profile. Genuinely.
 - The work timer also pauses on hidden tabs. We are not psychopaths.
 - `chrome.storage.local` writes are throttled to once every ~30 seconds (with forced flushes when something actually matters), so 17 open tabs don't all fight to write the same number.
 - The work-timer interval doesn't even *start* if you've turned the nag off. We respect your toggles.
-- ~24 animated sprites, total < 1 MB, stored as data URLs after the one-time fetch. Hand-on-heart, the extension is smaller than the GIF you sent in chat earlier.
+- All **649** Gen 1–5 sprites fetched once at install with bounded concurrency (~16 in flight) so we don't hammer GitHub's CDN. Total cache lands around **5–9 MB** on disk; the extension declares `unlimitedStorage` to keep it comfortably under quota. Hand-on-heart, the *extension code itself* is still smaller than the GIF you sent in chat earlier.
 - DOM only re-spawns when *visual* settings actually change. Nudging the offset slider patches CSS variables in place, like a civilised codebase.
 
 <img align="right" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/132.gif" width="80" alt="Ditto" />

@@ -21,14 +21,33 @@ export async function fetchSprite(id: number): Promise<string> {
   return await blobToDataUrl(blob);
 }
 
-export async function fetchAllSprites(ids: ReadonlyArray<number>): Promise<Record<number, string>> {
-  const results = await Promise.allSettled(ids.map(async id => [id, await fetchSprite(id)] as const));
+const DEFAULT_CONCURRENCY = 16;
+
+export async function fetchAllSprites(
+  ids: ReadonlyArray<number>,
+  options?: { concurrency?: number; onProgress?: (done: number, total: number) => void }
+): Promise<Record<number, string>> {
+  const total = ids.length;
+  const limit = Math.max(1, options?.concurrency ?? DEFAULT_CONCURRENCY);
   const byId: Record<number, string> = {};
-  for (const r of results) {
-    if (r.status === "fulfilled") {
-      const [id, url] = r.value;
-      byId[id] = url;
+  let cursor = 0;
+  let done = 0;
+
+  const worker = async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= total) return;
+      const id = ids[i] as number;
+      try {
+        byId[id] = await fetchSprite(id);
+      } catch {
+        /* swallowed: missing sprites are simply absent from the cache */
+      }
+      done++;
+      options?.onProgress?.(done, total);
     }
-  }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(limit, total) }, worker));
   return byId;
 }
