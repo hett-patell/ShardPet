@@ -2,10 +2,12 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_WORK_TIMERS,
   loadSettings,
+  loadSpriteCache,
   saveSettings,
   saveWorkTimers,
   type Settings
 } from "../storage";
+import { POKEMON_LIST } from "../pokemon-list";
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
@@ -131,10 +133,27 @@ resyncBtn.addEventListener("click", async () => {
   }
 });
 
+async function reportCacheHealth(): Promise<void> {
+  if (statusEl.textContent && statusEl.textContent.length > 0) return;
+  try {
+    const cache = await loadSpriteCache();
+    const have = cache ? Object.keys(cache.byId).length : 0;
+    const total = POKEMON_LIST.length;
+    if (have === 0) {
+      statusEl.textContent = "Sprite cache is empty — try Resync.";
+    } else if (have < total * 0.9) {
+      statusEl.textContent = `Cache incomplete (${have}/${total}). Try Resync.`;
+    }
+  } catch {
+    /* ignore — popup can render without cache info */
+  }
+}
+
 (async () => {
   const s = await loadSettings();
   applyToForm({ ...DEFAULT_SETTINGS, ...s });
   settingsHydrated = true;
+  void reportCacheHealth();
 })();
 
 document.addEventListener("visibilitychange", () => {

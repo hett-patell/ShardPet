@@ -86,7 +86,7 @@ describe("tickWorkTimer", () => {
     expect(result.shouldTrigger).toBe(true);
   });
 
-  test("resets hostname counter when allowlisted", () => {
+  test("drops hostname entry when allowlisted (avoids unbounded growth)", () => {
     const state = {
       hostnamesElapsed: { "github.com": 200 },
       cooldownUntilMs: 0
@@ -95,7 +95,7 @@ describe("tickWorkTimer", () => {
       hostname: "github.com",
       isAllowlisted: true
     }));
-    expect(result.state.hostnamesElapsed["github.com"]).toBe(0);
+    expect(result.state.hostnamesElapsed["github.com"]).toBeUndefined();
     expect(result.shouldTrigger).toBe(false);
   });
 

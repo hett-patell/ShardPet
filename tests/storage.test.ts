@@ -2,6 +2,8 @@ import { describe, test, expect } from "vitest";
 import {
   DEFAULT_SETTINGS,
   mergeSettings,
+  pruneHostnames,
+  MAX_TRACKED_HOSTNAMES,
   type Settings,
   type SpriteCache,
   CURRENT_CACHE_VERSION
@@ -19,7 +21,7 @@ describe("DEFAULT_SETTINGS", () => {
       reducedMotion: "auto",
       allowlist: [],
       productivityNagEnabled: true,
-      workThresholdMinutes: 5,
+      workThresholdMinutes: 15,
       showTimerIndicator: false,
       favorites: []
     });
@@ -63,6 +65,29 @@ describe("mergeSettings", () => {
   test("clamps workThresholdMinutes to 1..120", () => {
     expect(mergeSettings({ workThresholdMinutes: 0 }).workThresholdMinutes).toBe(1);
     expect(mergeSettings({ workThresholdMinutes: 9999 }).workThresholdMinutes).toBe(120);
+  });
+});
+
+describe("pruneHostnames", () => {
+  test("returns the same object when entries fit under the cap", () => {
+    const raw = { "a.com": 10, "b.com": 20, "c.com": 30 };
+    expect(pruneHostnames(raw, 10)).toBe(raw);
+  });
+
+  test("keeps the top-N highest-elapsed entries when over the cap", () => {
+    const raw: Record<string, number> = {};
+    for (let i = 0; i < 50; i++) raw[`site-${i}.com`] = i;
+    const pruned = pruneHostnames(raw, 5);
+    expect(Object.keys(pruned)).toHaveLength(5);
+    expect(pruned["site-49.com"]).toBe(49);
+    expect(pruned["site-45.com"]).toBe(45);
+    expect(pruned["site-44.com"]).toBeUndefined();
+    expect(pruned["site-0.com"]).toBeUndefined();
+  });
+
+  test("MAX_TRACKED_HOSTNAMES is reasonable (within an order of magnitude of 100)", () => {
+    expect(MAX_TRACKED_HOSTNAMES).toBeGreaterThan(10);
+    expect(MAX_TRACKED_HOSTNAMES).toBeLessThan(1000);
   });
 });
 

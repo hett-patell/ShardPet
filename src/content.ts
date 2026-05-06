@@ -56,7 +56,6 @@ let lastVisibleTickMs = 0;
 let lastWorkPersistMs = 0;
 let workTimersDirty = false;
 let overlayHandles: OverlayHandles | null = null;
-let suppressNextStorageEvent = false;
 
 const FRAME_BUDGET_MS = 1000 / 30;
 const WORK_TICK_INTERVAL_MS = 5_000;
@@ -152,13 +151,15 @@ function pickRandomId(c: SpriteCache, exclude?: number): number {
   const filtered = exclude === undefined ? all : all.filter(id => id !== exclude);
   const pool = filtered.length > 0 ? filtered : all;
 
-  // Weighted selection — favorites get 3x weight
+  // Weighted selection — favorites get 3x weight. Using a Set turns the
+  // membership check from O(F) per pool entry into O(1).
   if (settings && settings.favorites.length > 0) {
+    const favSet = new Set(settings.favorites);
     const weighted: number[] = [];
     for (const id of pool) {
       weighted.push(id);
-      if (settings.favorites.includes(id)) {
-        weighted.push(id, id); // 2 extra copies = 3x weight
+      if (favSet.has(id)) {
+        weighted.push(id, id);
       }
     }
     return weighted[Math.floor(Math.random() * weighted.length)] as number;
@@ -344,12 +345,12 @@ function attachLifecycle(): void {
     if (changes.spriteCache) {
       void reloadCache();
     }
-    if (changes.workTimers && changes.workTimers.newValue) {
-      if (suppressNextStorageEvent) {
-        suppressNextStorageEvent = false;
-      } else {
-        workTimers = changes.workTimers.newValue as WorkTimers;
-      }
+    // Self-echoes from our own saveWorkTimers() are harmless: the incoming
+    // value is what we just wrote, so re-assigning is a no-op. Keeping this
+    // simple avoids the race the suppression flag introduced when two tabs
+    // persisted near-simultaneously.
+    if (changes.workTimers?.newValue) {
+      workTimers = changes.workTimers.newValue as WorkTimers;
     }
   });
 }
@@ -372,7 +373,6 @@ function pauseWorkTimer(): void {
 async function persistWorkTimers(): Promise<void> {
   workTimersDirty = false;
   lastWorkPersistMs = performance.now();
-  suppressNextStorageEvent = true;
   await saveWorkTimers(workTimers);
 }
 

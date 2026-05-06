@@ -39,10 +39,12 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: "auto",
   allowlist: [],
   productivityNagEnabled: true,
-  workThresholdMinutes: 5,
+  workThresholdMinutes: 15,
   showTimerIndicator: false,
   favorites: []
 };
+
+export const MAX_TRACKED_HOSTNAMES = 100;
 
 export const DEFAULT_WORK_TIMERS: WorkTimers = {
   hostnamesElapsed: {},
@@ -83,15 +85,27 @@ export async function saveSpriteCache(c: SpriteCache): Promise<void> {
   await chrome.storage.local.set({ spriteCache: c });
 }
 
+export function pruneHostnames(
+  raw: Record<string, number>,
+  cap: number = MAX_TRACKED_HOSTNAMES
+): Record<string, number> {
+  const entries = Object.entries(raw);
+  if (entries.length <= cap) return raw;
+  // Cap to top-N most-elapsed hostnames so a long history of one-off visits
+  // doesn't slowly bloat chrome.storage.local forever.
+  return Object.fromEntries(entries.sort((a, b) => b[1] - a[1]).slice(0, cap));
+}
+
 export async function loadWorkTimers(): Promise<WorkTimers> {
   const got = await chrome.storage.local.get("workTimers");
   const t = got.workTimers as Partial<WorkTimers> | undefined;
   if (!t) return { ...DEFAULT_WORK_TIMERS };
+  const raw =
+    t.hostnamesElapsed && typeof t.hostnamesElapsed === "object"
+      ? (t.hostnamesElapsed as Record<string, number>)
+      : {};
   return {
-    hostnamesElapsed:
-      t.hostnamesElapsed && typeof t.hostnamesElapsed === "object"
-        ? (t.hostnamesElapsed as Record<string, number>)
-        : {},
+    hostnamesElapsed: pruneHostnames(raw),
     cooldownUntilMs: typeof t.cooldownUntilMs === "number" ? t.cooldownUntilMs : 0
   };
 }

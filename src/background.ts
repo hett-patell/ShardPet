@@ -11,6 +11,11 @@ const TOTAL_IDS = POKEMON_LIST.length;
 // startup or install.
 const CACHE_HEALTH_THRESHOLD = 0.9;
 
+// Re-sync from PokeAPI if the cache is older than this. Sprites here are
+// historical Gen 5 BW assets so they don't churn often, but a periodic
+// refresh lets us pick up upstream fixes without forcing a manual resync.
+const CACHE_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+
 function logProgress(done: number, total: number): void {
   if (done === total || done % 100 === 0) {
     console.info(`[ShardPet] sprites: ${done}/${total}`);
@@ -35,9 +40,13 @@ async function syncSprites(): Promise<{ ok: boolean; count: number }> {
 async function syncIfNeeded(reason: string): Promise<void> {
   const existing = await loadSpriteCache();
   const have = existing ? Object.keys(existing.byId).length : 0;
-  if (have >= TOTAL_IDS * CACHE_HEALTH_THRESHOLD) return;
+  const ageMs = existing ? Date.now() - existing.fetchedAt : Infinity;
+  const isHealthy = have >= TOTAL_IDS * CACHE_HEALTH_THRESHOLD;
+  const isFresh = ageMs < CACHE_MAX_AGE_MS;
+  if (isHealthy && isFresh) return;
   try {
-    console.info(`[ShardPet] cache has ${have}/${TOTAL_IDS}; resyncing (${reason})`);
+    const why = !isHealthy ? `${have}/${TOTAL_IDS}` : `${Math.floor(ageMs / 86_400_000)}d old`;
+    console.info(`[ShardPet] resyncing sprites (${reason}, ${why})`);
     await syncSprites();
   } catch (e) {
     console.warn(`[ShardPet] ${reason} sprite sync failed`, e);

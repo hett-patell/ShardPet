@@ -44,7 +44,7 @@ It is also, somehow, designed to use less CPU than your desktop wallpaper.
 
 - **1–3 wandering Pokémon** that walk, idle, and occasionally hop. Click one to reroll it. They have free will. Mostly.
 - **Highly customisable**: count, size (24–128 px — yes you can make them huge), bottom offset, speed (slow / normal / fast / "Slowpoke is sprinting"), per-host blacklist for sites where you'd rather not be perceived.
-- **The Productivity Nag™**: per-hostname cumulative timer (1–60 min), allowlist for sites that don't count, and a 5-minute cooldown after each dismiss because we're not monsters.
+- **The Productivity Nag™**: per-hostname cumulative timer (1–120 min, default **15 min**), allowlist for sites that don't count, and a 5-minute cooldown after each dismiss because we're not monsters.
 - **Live timer pill** (optional) — a tiny top-right HUD that judges you in real time. `reddit.com • 4m37s / 5m00s` is a deeply uncomfortable string.
 - **Toolbar popup** for all settings. No cursed options page. Click the icon, fiddle, leave.
 - **Reduced-motion aware** — auto-detects `prefers-reduced-motion` so it doesn't enrage your vestibular system.
@@ -71,7 +71,7 @@ ShardPet is engineered to be invisible on a CPU profile. Genuinely.
 > Mozilla Add-ons / Chrome Web Store listing TBD. For now it's BYO-build.
 
 **Option A — download the release:**
-1. Grab `shardpet-v1.0.0.zip` from [Releases](https://github.com/hett-patell/ShardPet/releases) and unzip it.
+1. Grab the latest `shardpet-vX.Y.Z.zip` from [Releases](https://github.com/hett-patell/ShardPet/releases) and unzip it. (`v2.0.0` is the current full roster; `v1.0.0` is the original 24-Pokémon minimal build if you want a smaller footprint.)
 2. Open `chrome://extensions` (or whatever your Chromium flavour calls it — Helium, Brave, Edge, Arc, the new one your friend told you about last week).
 3. Flip on **Developer mode** (top right corner, you've got this).
 4. Click **Load unpacked** → pick the unzipped folder.
@@ -104,7 +104,7 @@ Click the **ShardPet** toolbar icon. A 340px popup falls out. Two sections.
 ### Productivity nag
 
 - Enable / disable the "Get back to work!" overlay
-- Trigger threshold: 1–60 minutes of cumulative time on a non-allowlisted hostname
+- Trigger threshold: 1–120 minutes of cumulative time on a non-allowlisted hostname (default 15 min)
 - **Allowlist** — sites you're allowed to use without being yelled at (one per line; subdomains match). Standard inclusions: `github.com`, `linear.app`, `notion.so`, your company's Jira, the docs page you're definitely going to read this time.
 - **Show live timer pill** — top-right HUD. Recommended for the first day so you can debug your own brain.
 - **Reset timers** — nukes per-hostname accumulators and any active cooldown. For when you've earned a clean slate or want to test the overlay without sitting through five minutes of suspense.
@@ -120,7 +120,7 @@ When the overlay fires: title in pixel-art font, every cached Pokémon scattered
 npm install         # install deps
 npm run dev         # Vite dev (popup HMR)
 npm run build       # production build → dist/
-npm test            # unit tests (Vitest, 42 of them, all green)
+npm test            # unit tests (Vitest, 45 of them, all green)
 npm run typecheck   # strict TS, no `any`s, no excuses
 ```
 
@@ -164,6 +164,9 @@ A: Click them. They reroll. If they're *all* stuck (i.e. the loop is dead), open
 **Q: It triggered immediately after I dismissed it. Bug?**
 A: Fixed in v1.0.0. `applyDismiss` now resets the dismissed hostname's accumulator so the next nag also requires a fresh threshold's worth of time. You can resume your descent into Twitter responsibly.
 
+**Q: What's different in v2?**
+A: Three things, mostly: (1) **all 649 Gen 1–5 Pokémon** (v1 shipped 24 starters); (2) sprite cache now refreshes every 90 days so you pick up upstream fixes; (3) several quiet correctness/perf fixes — the storage-event suppression race is gone, allowlist hits no longer leave dead keys behind, the per-hostname history is capped at 100 entries to stop unbounded growth, the `latin1` `TextDecoder` replaced a chunked base64 hot-path, and the default focus threshold is now 15 min instead of an aggressive 5. v1 is preserved as the "minimal" build if you want the lighter cache.
+
 **Q: Can I add my own Pokémon list?**
 A: Yes — edit `src/pokemon-list.ts`, rebuild, and click **Resync sprites**. Mythical / legendary Pokémon are excellent candidates for "shame me extra hard."
 
@@ -189,6 +192,6 @@ Pokémon names and sprite imagery are © Nintendo / Game Freak / Creatures Inc. 
 
 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/151.gif" width="64" alt="Mew" />
 
-*Built with one `requestAnimationFrame`, three regrets, and twenty-four Pokémon.*
+*Built with one `requestAnimationFrame`, three regrets, and six hundred and forty-nine Pokémon.*
 
 </div>

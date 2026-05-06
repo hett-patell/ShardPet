@@ -133,6 +133,8 @@ export function mountOverlay(args: {
     if (e.target === backdrop || e.target === card) handleDismiss();
   });
   button.addEventListener("click", handleDismiss);
+  // Capture-phase listener so we beat any page-level Escape handlers that
+  // might otherwise eat the key (e.g. modals on the host page).
   document.addEventListener("keydown", onKey, true);
 
   return { destroy };

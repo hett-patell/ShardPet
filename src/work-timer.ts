@@ -24,7 +24,9 @@ export function tickWorkTimer(state: WorkTimers, input: WorkTimerInput): WorkTim
   };
 
   if (input.isAllowlisted) {
-    next.hostnamesElapsed[input.hostname] = 0;
+    // Drop the entry entirely so a long allowlist history doesn't accumulate
+    // an ever-growing list of zero-valued keys in storage.
+    delete next.hostnamesElapsed[input.hostname];
     return { state: next, shouldTrigger: false };
   }
 
