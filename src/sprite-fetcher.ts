@@ -2,10 +2,20 @@ import { SPRITE_URL } from "./pokemon-list";
 
 export async function blobToDataUrl(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
-  // latin1 maps each byte 0..255 to the same Unicode code point, which is
-  // exactly the byte-string format btoa() expects. Avoids the per-chunk
-  // Array.from + String.fromCharCode.apply dance the previous impl used.
-  const binary = new TextDecoder("latin1").decode(new Uint8Array(buf));
+  const bytes = new Uint8Array(buf);
+  // Build a byte-string for btoa(). We MUST NOT use TextDecoder("latin1"):
+  // the WHATWG Encoding standard aliases "latin1" to windows-1252, where
+  // 0x81 / 0x8D / 0x8F / 0x90 / 0x9D are unmapped and decode to U+FFFD.
+  // GIF binary data hits those bytes constantly, and U+FFFD makes btoa
+  // throw InvalidCharacterError. The chunked apply() form is the safe
+  // round-trip; Uint8Array is already array-like so we can pass it
+  // directly without the Array.from() allocation.
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    const slice = bytes.subarray(i, i + CHUNK);
+    binary += String.fromCharCode.apply(null, slice as unknown as number[]);
+  }
   const base64 = btoa(binary);
   const mime = blob.type || "application/octet-stream";
   return `data:${mime};base64,${base64}`;

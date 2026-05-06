@@ -8,6 +8,36 @@ describe("blobToDataUrl", () => {
     const url = await blobToDataUrl(blob);
     expect(url.startsWith("data:image/gif;base64,")).toBe(true);
   });
+
+  test("round-trips bytes that are unmapped in windows-1252", async () => {
+    // Regression: TextDecoder("latin1") aliases to windows-1252 where these
+    // bytes decode to U+FFFD, and btoa() then throws InvalidCharacterError.
+    // GIF binary data hits these constantly, so the whole sprite cache
+    // silently went to zero on first install. This test fails if we ever
+    // reintroduce a TextDecoder-based byte→string conversion.
+    const tricky = new Uint8Array([0x00, 0x81, 0x8d, 0x8f, 0x90, 0x9d, 0xff]);
+    const blob = new Blob([tricky], { type: "image/gif" });
+    const url = await blobToDataUrl(blob);
+    expect(url.startsWith("data:image/gif;base64,")).toBe(true);
+
+    const base64 = url.slice("data:image/gif;base64,".length);
+    const decoded = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    expect(Array.from(decoded)).toEqual(Array.from(tricky));
+  });
+
+  test("handles binary spanning the 32KB chunk boundary", async () => {
+    // Make sure the chunked apply() loop doesn't drop or duplicate bytes.
+    const big = new Uint8Array(0x8000 + 17);
+    for (let i = 0; i < big.length; i++) big[i] = i & 0xff;
+    const blob = new Blob([big], { type: "image/gif" });
+    const url = await blobToDataUrl(blob);
+    const base64 = url.slice("data:image/gif;base64,".length);
+    const decoded = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    expect(decoded.length).toBe(big.length);
+    expect(decoded[0]).toBe(0x00);
+    expect(decoded[0x8000]).toBe(0x00);
+    expect(decoded[decoded.length - 1]).toBe(big[big.length - 1]);
+  });
 });
 
 describe("fetchSprite", () => {

@@ -3,3 +3,6 @@ dist/
 .vite/
 *.log
 .DS_Store
+
+# Release artifacts — uploaded to GitHub Releases, not tracked here
+shardpet-v*.zip
