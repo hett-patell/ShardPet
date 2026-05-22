@@ -4,6 +4,11 @@
 
 # ShardPet
 
+[![Release](https://img.shields.io/github/v/release/hett-patell/ShardPet?color=blue)](https://github.com/hett-patell/ShardPet/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Web%20Store-pending-lightgrey.svg)](#)
+[![Stars](https://img.shields.io/github/stars/hett-patell/ShardPet?style=social)](https://github.com/hett-patell/ShardPet/stargazers)
+
 <p align="center">
     <picture>
         <img src="https://github.com/user-attachments/assets/c63b75ab-a529-4bd8-855d-ef15ae4a65a9" alt="ShardPass" width="500">
@@ -185,6 +190,19 @@ PRs welcome. Issues welcomer. Bugs are inevitable; the absence of tests is unfor
 Source code: **MIT** — see [`LICENSE`](./LICENSE). Do whatever you want, just don't blame me when your Snorlax gets sentient.
 
 Pokémon names and sprite imagery are © Nintendo / Game Freak / Creatures Inc. Sprites are **not** redistributed in this repository — they are fetched at runtime from PokéAPI's public sprite CDN. This is an unofficial, non-commercial fan project, not affiliated with or endorsed by Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. Please don't sue us, we just wanted a small friend in our browser.
+
+---
+
+## The Shard ecosystem
+
+| Repo | What it does |
+|---|---|
+| [ShardLure](https://github.com/hett-patell/ShardLure) | SSH honeypot + threat-intel dashboard |
+| [ShardC2](https://github.com/hett-patell/ShardC2) | Red-team C2 framework in Go |
+| [ShardFlow](https://github.com/hett-patell/ShardFlow) | Layer-2 LAN workbench (ARP, drop, throttle) |
+| [ShardShell](https://github.com/hett-patell/ShardShell) | PHP post-exploitation shell |
+| [ShardPass](https://github.com/hett-patell/ShardPass) | Minimal TOTP authenticator (Chrome MV3) |
+| [ShardPet](https://github.com/hett-patell/ShardPet) | Pixel-Pokémon browser extension |
 
 ---
 
