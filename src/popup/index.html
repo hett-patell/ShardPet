@@ -3,29 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <title>ShardPet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
         color-scheme: light dark;
-        --bg: #fafafa;
-        --fg: #141414;
-        --muted: #6b6b6b;
-        --border: #e8e8e8;
-        --surface: #f3f3f4;
-        --accent: #2563eb;
-        --accent-soft: rgba(37, 99, 235, 0.12);
-        --radius: 10px;
-        --font: system-ui, -apple-system, "Segoe UI", sans-serif;
-        --mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+        /* Game Boy DMG-inspired palette, calibrated for readability. */
+        --bg: #e6e7d3;
+        --bg-alt: #d6d8be;
+        --ink: #1a1c14;
+        --ink-soft: #4d5040;
+        --line: #1a1c14;
+        --accent: #5b7a3a;
+        --accent-soft: rgba(91, 122, 58, 0.18);
+        --warn: #b94e4e;
+        --shadow: rgba(26, 28, 20, 0.6);
+
+        --font-pixel: "Press Start 2P", ui-monospace, "Courier New", monospace;
+        --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
       }
+
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #121214;
-          --fg: #ececf0;
-          --muted: #9898a0;
-          --border: #2a2a30;
-          --surface: #1c1c20;
-          --accent: #60a5fa;
-          --accent-soft: rgba(96, 165, 250, 0.15);
+          --bg: #16180e;
+          --bg-alt: #1f2114;
+          --ink: #dcdcc6;
+          --ink-soft: #a5a78a;
+          --line: #dcdcc6;
+          --accent: #9fbf6f;
+          --accent-soft: rgba(159, 191, 111, 0.18);
+          --warn: #e08585;
+          --shadow: rgba(0, 0, 0, 0.65);
         }
       }
 
@@ -41,333 +54,586 @@
       }
 
       body {
-        font: 12px/1.45 var(--font);
-        width: 300px;
-        max-height: min(560px, 92vh);
+        font: 10px/1.55 var(--font-mono);
+        width: 340px;
+        max-height: min(600px, 94vh);
         overflow-x: hidden;
         overflow-y: auto;
         background: var(--bg);
-        color: var(--fg);
-        padding: 12px 12px 14px;
+        color: var(--ink);
+        padding: 14px 14px 16px;
+        image-rendering: pixelated;
       }
+
+      /* Crosshatch wallpaper just behind the body for a little texture. */
+      body {
+        background-image:
+          linear-gradient(0deg, var(--bg-alt) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-alt) 1px, transparent 1px);
+        background-size: 8px 8px;
+        background-position: -1px -1px;
+      }
+
+      /* ----- Header ----- */
 
       .header {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 8px;
-        margin-bottom: 10px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        background: var(--bg-alt);
+        border: 2px solid var(--line);
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        image-rendering: pixelated;
+        flex-shrink: 0;
+        opacity: 0;
+        transition: opacity 200ms ease;
+      }
+
+      .brand-mark[data-loaded="1"] {
+        opacity: 1;
       }
 
       .title {
-        font-size: 15px;
-        font-weight: 600;
-        letter-spacing: -0.02em;
+        font-family: var(--font-pixel);
+        font-weight: 400;
+        font-size: 12px;
+        letter-spacing: 0.02em;
         margin: 0;
+        text-shadow: 2px 2px 0 var(--accent-soft);
       }
 
       .ver {
-        font-size: 10px;
-        font-weight: 500;
-        color: var(--muted);
+        font-family: var(--font-pixel);
+        font-size: 7px;
+        color: var(--ink-soft);
         letter-spacing: 0.06em;
+      }
+
+      /* ----- Section card ----- */
+
+      .section {
+        border: 2px solid var(--line);
+        background: var(--bg-alt);
+        padding: 0;
+        margin-bottom: 12px;
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+
+      .section-head {
+        font-family: var(--font-pixel);
+        font-size: 8px;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        background: var(--bg);
+        padding: 6px 10px;
+        border-bottom: 2px solid var(--line);
         text-transform: uppercase;
       }
 
-      .card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 10px 10px 8px;
-        margin-bottom: 8px;
+      .section-body {
+        padding: 10px 10px 12px;
       }
 
-      .row {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 8px;
+      /* ----- Field rows ----- */
+
+      .field {
+        margin-bottom: 10px;
       }
 
-      .row:last-child {
+      .field:last-child {
         margin-bottom: 0;
       }
 
-      .row input[type="checkbox"] {
-        margin-top: 2px;
-        accent-color: var(--accent);
-      }
-
-      .row label {
-        flex: 1;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        line-height: 1.35;
-      }
-
-      .field label {
+      .field-label {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
         gap: 8px;
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--muted);
-        margin: 6px 0 3px;
+        font-family: var(--font-pixel);
+        font-size: 7px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        margin: 0 0 5px;
       }
 
-      .field label:first-of-type {
-        margin-top: 0;
-      }
-
-      label output {
+      .field-label output {
+        font-family: var(--font-mono);
+        font-size: 10px;
         font-weight: 600;
-        color: var(--fg);
+        color: var(--ink);
+        letter-spacing: 0;
+        text-transform: none;
         font-variant-numeric: tabular-nums;
       }
 
-      input[type="range"] {
-        display: block;
-        width: 100%;
-        height: 4px;
-        margin: 0 0 2px;
-        accent-color: var(--accent);
+      /* ----- Checkbox row ----- */
+
+      .check-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
+        margin-bottom: 10px;
       }
 
-      select {
-        width: 100%;
-        padding: 5px 7px;
-        font: inherit;
-        color: var(--fg);
+      .check-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .check-row input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .check-box {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
         background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
+        border: 2px solid var(--line);
+        position: relative;
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+
+      .check-row input[type="checkbox"]:checked + .check-box::after {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        background: var(--accent);
+      }
+
+      .check-row input[type="checkbox"]:focus-visible + .check-box {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      .check-label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--ink);
+        flex: 1;
+      }
+
+      /* ----- Range sliders ----- */
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 14px;
+        background: transparent;
+        margin: 0;
+        padding: 0;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 6px;
+        background: var(--bg);
+        border: 2px solid var(--line);
+        box-shadow: inset 2px 2px 0 var(--accent-soft);
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 6px;
+        background: var(--bg);
+        border: 2px solid var(--line);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: var(--accent);
+        border: 2px solid var(--line);
+        margin-top: -6px;
+        cursor: pointer;
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--accent);
+        border: 2px solid var(--line);
+        border-radius: 0;
+        cursor: pointer;
+      }
+
+      input[type="range"]:focus-visible::-webkit-slider-thumb {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      /* ----- Segmented control (replaces <select>) ----- */
+
+      .seg {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        border: 2px solid var(--line);
+        background: var(--bg);
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+
+      .seg input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .seg label {
+        font-family: var(--font-pixel);
+        font-size: 7px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-align: center;
+        padding: 6px 4px;
+        cursor: pointer;
+        color: var(--ink-soft);
+        background: var(--bg);
+        border-right: 2px solid var(--line);
+        transition: background 80ms ease, color 80ms ease;
+        user-select: none;
+      }
+
+      .seg label:last-child {
+        border-right: 0;
+      }
+
+      .seg label:hover {
+        color: var(--ink);
+      }
+
+      .seg input[type="radio"]:checked + label {
+        background: var(--accent);
+        color: var(--bg);
+      }
+
+      .seg input[type="radio"]:focus-visible + label {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+
+      /* ----- Textareas ----- */
+
+      textarea {
+        width: 100%;
+        min-height: 50px;
+        font: 11px/1.4 var(--font-mono);
+        padding: 7px 8px;
+        background: var(--bg);
+        color: var(--ink);
+        border: 2px solid var(--line);
+        box-shadow: 2px 2px 0 var(--shadow);
+        resize: vertical;
         outline: none;
+        border-radius: 0;
       }
 
-      select:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 2px var(--accent-soft);
+      textarea:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
       }
 
-      .grid-2 {
+      textarea::placeholder {
+        color: var(--ink-soft);
+        opacity: 0.7;
+      }
+
+      /* ----- Buttons ----- */
+
+      .actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
       }
 
-      details {
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        margin-bottom: 8px;
-        background: transparent;
-      }
-
-      details[open] {
-        background: var(--surface);
-      }
-
-      summary {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        list-style: none;
-        cursor: pointer;
-        font-size: 11px;
-        font-weight: 600;
+      .btn {
+        font-family: var(--font-pixel);
+        font-size: 8px;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: var(--muted);
-        padding: 8px 10px;
-        user-select: none;
-      }
-
-      summary::-webkit-details-marker {
-        display: none;
-      }
-
-      summary::after {
-        content: "";
-        flex-shrink: 0;
-        width: 5px;
-        height: 5px;
-        border-right: 1.5px solid var(--muted);
-        border-bottom: 1.5px solid var(--muted);
-        transform: rotate(-45deg);
-        margin-top: 4px;
-        opacity: 0.7;
-      }
-
-      details[open] summary::after {
-        transform: rotate(45deg);
-        margin-top: 6px;
-      }
-
-      .panel {
-        padding: 0 10px 10px;
-      }
-
-      textarea {
-        width: 100%;
-        min-height: 48px;
-        font: 10px/1.35 var(--mono);
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
+        padding: 9px 8px;
+        color: var(--ink);
         background: var(--bg);
-        color: var(--fg);
-        resize: vertical;
-        outline: none;
-      }
-
-      textarea:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 2px var(--accent-soft);
-      }
-
-      .panel .field label {
-        margin-top: 8px;
-      }
-
-      .panel .field label:first-of-type {
-        margin-top: 0;
-      }
-
-      .actions {
-        display: flex;
-        gap: 6px;
-        margin-top: 10px;
-      }
-
-      .btn {
-        flex: 1;
-        padding: 6px 8px;
-        font: inherit;
-        font-size: 11px;
-        font-weight: 500;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: var(--bg);
-        color: var(--fg);
+        border: 2px solid var(--line);
+        box-shadow: 3px 3px 0 var(--shadow);
         cursor: pointer;
+        transition: transform 80ms ease, box-shadow 80ms ease, background 80ms ease;
       }
 
       .btn:hover {
-        background: var(--surface);
+        background: var(--accent-soft);
+      }
+
+      .btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 var(--shadow);
       }
 
       .btn:focus-visible {
-        outline: none;
-        box-shadow: 0 0 0 2px var(--accent-soft);
-        border-color: var(--accent);
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
 
+      .btn[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 3px 3px 0 var(--shadow);
+      }
+
+      .btn-warn {
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+
+      .btn-warn:hover {
+        background: rgba(185, 78, 78, 0.12);
+      }
+
+      /* ----- Preview strip ----- */
+
+      .preview {
+        position: relative;
+        height: 80px;
+        background:
+          repeating-linear-gradient(
+            90deg,
+            var(--bg) 0,
+            var(--bg) 7px,
+            var(--bg-alt) 7px,
+            var(--bg-alt) 8px
+          );
+        border: 2px solid var(--line);
+        margin: 0;
+        overflow: hidden;
+        box-shadow: inset 0 -4px 0 var(--accent-soft);
+      }
+
+      .preview-ground {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 4px;
+        background: var(--accent);
+        opacity: 0.45;
+      }
+
+      .preview-sprite {
+        position: absolute;
+        bottom: 6px;
+        left: 0;
+        image-rendering: pixelated;
+        user-select: none;
+        -webkit-user-drag: none;
+        will-change: transform;
+      }
+
+      .preview-empty {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-pixel);
+        font-size: 8px;
+        color: var(--ink-soft);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      /* ----- Status + footer ----- */
+
       .status {
-        margin-top: 8px;
+        display: block;
+        margin-top: 4px;
+        font-family: var(--font-mono);
         font-size: 10px;
-        color: var(--muted);
-        min-height: 13px;
-        line-height: 1.35;
+        color: var(--ink-soft);
+        min-height: 14px;
+        line-height: 1.4;
       }
 
       .footer {
-        margin-top: 10px;
+        margin-top: 12px;
+        font-family: var(--font-mono);
         font-size: 9px;
-        color: var(--muted);
-        line-height: 1.4;
+        color: var(--ink-soft);
+        line-height: 1.5;
+        text-align: center;
         opacity: 0.85;
+      }
+
+      /* Reduced motion: kill the preview wander animation. */
+      @media (prefers-reduced-motion: reduce) {
+        .preview-sprite {
+          transition: none !important;
+        }
       }
     </style>
   </head>
   <body>
     <header class="header">
-      <h1 class="title">ShardPet</h1>
-      <span class="ver" id="version-label">v1.0</span>
+      <div class="brand">
+        <img class="brand-mark" id="brand-mark" alt="" />
+        <h1 class="title">ShardPet</h1>
+      </div>
+      <span class="ver" id="version-label">v0.0</span>
     </header>
 
-    <div class="card">
-      <div class="row">
-        <input type="checkbox" id="enabled" />
-        <label for="enabled">Show pets on pages</label>
-      </div>
-
-      <div class="field">
-        <label for="count">Count <output id="count-out"></output></label>
-        <input type="range" id="count" min="1" max="3" step="1" />
-
-        <label for="size">Size <output id="size-out"></output></label>
-        <input type="range" id="size" min="24" max="128" step="2" />
-
-        <label for="offset">Offset <output id="offset-out"></output></label>
-        <input type="range" id="offset" min="0" max="40" step="1" />
-      </div>
-
-      <div class="grid-2" style="margin-top: 4px">
-        <div class="field" style="margin: 0">
-          <label for="speed">Speed</label>
-          <select id="speed">
-            <option value="slow">Slow</option>
-            <option value="normal">Normal</option>
-            <option value="fast">Fast</option>
-          </select>
-        </div>
-        <div class="field" style="margin: 0">
-          <label for="reduced">Motion</label>
-          <select id="reduced">
-            <option value="auto">Auto</option>
-            <option value="off">Off</option>
-            <option value="on">On</option>
-          </select>
+    <!-- Live preview strip -->
+    <div class="section" aria-label="Preview">
+      <div class="section-head">Preview</div>
+      <div class="section-body" style="padding: 8px">
+        <div class="preview" id="preview">
+          <div class="preview-ground"></div>
+          <div class="preview-empty" id="preview-empty">No sprites cached</div>
         </div>
       </div>
     </div>
 
-    <details>
-      <summary>Sites</summary>
-      <div class="panel">
+    <!-- Pets -->
+    <div class="section">
+      <div class="section-head">Pets</div>
+      <div class="section-body">
+        <label class="check-row">
+          <input type="checkbox" id="enabled" />
+          <span class="check-box" aria-hidden="true"></span>
+          <span class="check-label">Show pets on pages</span>
+        </label>
+
         <div class="field">
-          <label for="blacklist">Blacklist</label>
+          <div class="field-label">
+            <span>Count</span>
+            <output id="count-out"></output>
+          </div>
+          <input type="range" id="count" min="1" max="5" step="1" />
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span>Size</span>
+            <output id="size-out"></output>
+          </div>
+          <input type="range" id="size" min="24" max="128" step="2" />
+        </div>
+
+        <div class="field">
+          <div class="field-label">
+            <span>Offset</span>
+            <output id="offset-out"></output>
+          </div>
+          <input type="range" id="offset" min="0" max="40" step="1" />
+        </div>
+
+        <div class="field">
+          <div class="field-label"><span>Speed</span></div>
+          <div class="seg" id="speed-seg" role="radiogroup" aria-label="Speed">
+            <input type="radio" name="speed" id="speed-slow" value="slow" />
+            <label for="speed-slow">Slow</label>
+            <input type="radio" name="speed" id="speed-normal" value="normal" />
+            <label for="speed-normal">Normal</label>
+            <input type="radio" name="speed" id="speed-fast" value="fast" />
+            <label for="speed-fast">Fast</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label"><span>Motion</span></div>
+          <div class="seg" id="reduced-seg" role="radiogroup" aria-label="Reduced motion">
+            <input type="radio" name="reduced" id="reduced-auto" value="auto" />
+            <label for="reduced-auto">Auto</label>
+            <input type="radio" name="reduced" id="reduced-off" value="off" />
+            <label for="reduced-off">Off</label>
+            <input type="radio" name="reduced" id="reduced-on" value="on" />
+            <label for="reduced-on">On</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sites -->
+    <div class="section">
+      <div class="section-head">Sites</div>
+      <div class="section-body">
+        <div class="field">
+          <div class="field-label"><span>Blacklist</span></div>
           <textarea id="blacklist" placeholder="one host per line"></textarea>
         </div>
         <div class="field">
-          <label for="favorites">Favorites (IDs)</label>
+          <div class="field-label"><span>Favorites (IDs)</span></div>
           <textarea id="favorites" placeholder="25&#10;143" rows="2"></textarea>
         </div>
       </div>
-    </details>
+    </div>
 
-    <details>
-      <summary>Focus</summary>
-      <div class="panel">
-        <div class="row" style="margin-bottom: 8px">
+    <!-- Focus -->
+    <div class="section">
+      <div class="section-head">Focus</div>
+      <div class="section-body">
+        <label class="check-row">
           <input type="checkbox" id="nag-enabled" />
-          <label for="nag-enabled">“Get back to work” overlay</label>
-        </div>
+          <span class="check-box" aria-hidden="true"></span>
+          <span class="check-label">“Get back to work” overlay</span>
+        </label>
+
         <div class="field">
-          <label for="threshold">After <output id="threshold-out"></output></label>
-          <input type="range" id="threshold" min="1" max="60" step="1" />
+          <div class="field-label">
+            <span>After</span>
+            <output id="threshold-out"></output>
+          </div>
+          <input type="range" id="threshold" min="1" max="120" step="1" />
         </div>
+
         <div class="field">
-          <label for="allowlist">Allowlist</label>
+          <div class="field-label"><span>Allowlist</span></div>
           <textarea id="allowlist" placeholder="one host per line"></textarea>
         </div>
-        <div class="row" style="margin-top: 8px; margin-bottom: 0">
-          <input type="checkbox" id="indicator" />
-          <label for="indicator">Timer pill (top-right)</label>
-        </div>
-      </div>
-    </details>
 
-    <div class="actions">
-      <button class="btn" id="resync" type="button">Resync</button>
-      <button class="btn" id="reset-timers" type="button">Reset timers</button>
+        <label class="check-row">
+          <input type="checkbox" id="indicator" />
+          <span class="check-box" aria-hidden="true"></span>
+          <span class="check-label">Timer pill (top-right)</span>
+        </label>
+      </div>
     </div>
-    <span class="status" id="status"></span>
+
+    <!-- Actions -->
+    <div class="section">
+      <div class="section-head">Actions</div>
+      <div class="section-body">
+        <div class="actions">
+          <button class="btn" id="resync" type="button">Resync</button>
+          <button class="btn btn-warn" id="reset-timers" type="button">Reset Timers</button>
+        </div>
+        <span class="status" id="status"></span>
+      </div>
+    </div>
 
     <p class="footer">
-      Sprites © Nintendo / Game Freak / Creatures — fetched from PokéAPI; not bundled here.
+      Sprites © Nintendo / Game Freak / Creatures<br />
+      Fetched from PokéAPI · not bundled
     </p>
 
     <script type="module" src="./popup.ts"></script>

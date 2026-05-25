@@ -39,7 +39,6 @@ type Pokemon = {
 };
 
 let host: HTMLDivElement | null = null;
-let shadow: ShadowRoot | null = null;
 let lane: HTMLDivElement | null = null;
 let indicator: HTMLDivElement | null = null;
 let indicatorHost: HTMLDivElement | null = null;
@@ -61,6 +60,12 @@ const FRAME_BUDGET_MS = 1000 / 30;
 const WORK_TICK_INTERVAL_MS = 5_000;
 const WORK_PERSIST_INTERVAL_MS = 30_000;
 const DISMISS_COOLDOWN_SECONDS = 5 * 60;
+
+// The nag overlay used to scatter *every* cached sprite (649 of them in v2),
+// which is visually chaotic, slow to decode, and a real perf hit on weak
+// hardware. Cap at a sensible density that still feels like a roomful of
+// judgmental Pokemon without melting the GPU.
+const NAG_OVERLAY_MAX_SPRITES = 24;
 
 const IMMOBILE_IDS: ReadonlySet<number> = new Set([143]);
 const isImmobile = (id: number): boolean => IMMOBILE_IDS.has(id);
@@ -87,6 +92,25 @@ async function main(): Promise<void> {
 
   mount(settings, cache);
   attachLifecycle();
+}
+
+async function remountAfterRestore(): Promise<void> {
+  // The page just came back from bfcache. `pagehide` ran `teardown()` so
+  // host/lane/pokemons/overlay/indicator are all gone, but our module-level
+  // listeners (storage.onChanged, visibilitychange) survived. Refresh all
+  // persisted state in case another tab mutated it while we were frozen,
+  // then re-run the same mount decision tree as `main()`.
+  settings = await loadSettings();
+  cache = await loadSpriteCache();
+  workTimers = await loadWorkTimers();
+
+  syncWorkTimerLifecycle();
+
+  if (!settings.enabled) return;
+  if (isBlacklisted(settings, location.hostname)) return;
+  if (!cache || Object.keys(cache.byId).length === 0) return;
+
+  mount(settings, cache);
 }
 
 function syncWorkTimerLifecycle(): void {
@@ -117,7 +141,10 @@ function mount(s: Settings, c: SpriteCache): void {
   host = document.createElement("div");
   host.id = "shardpet-host";
   host.style.cssText = "all: initial; position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483647; pointer-events: none;";
-  shadow = host.attachShadow({ mode: "closed" });
+  // The shadow root is only needed during mount to attach the stylesheet and
+  // lane container; afterwards we reach into `lane` directly and the closed
+  // root is unreachable from page scripts anyway. No need to keep a ref.
+  const shadow = host.attachShadow({ mode: "closed" });
 
   const style = document.createElement("style");
   style.textContent = stylesText;
@@ -329,12 +356,19 @@ function attachLifecycle(): void {
     }
   });
 
+  // bfcache-aware lifecycle: `pagehide` may be followed by a `pageshow` with
+  // `event.persisted === true` if the browser restored the page from the
+  // back-forward cache. We tear down on hide (so the rAF loop doesn't mutate
+  // detached nodes while the page sits in bfcache) and re-mount on persisted
+  // restore. Non-persisted shows are fresh navigations and re-inject the
+  // content script anyway, so we ignore those.
   window.addEventListener("pagehide", () => {
-    stopLoop();
-    pauseWorkTimer();
-    if (host) host.remove();
-    if (overlayHandles) overlayHandles.destroy();
-    teardownIndicator();
+    teardown();
+  });
+
+  window.addEventListener("pageshow", e => {
+    if (!e.persisted) return;
+    void remountAfterRestore();
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -497,13 +531,31 @@ function updateIndicator(
   indicator.textContent = `${hostname} • ${fmtSeconds(accumulatedSec)} / ${fmtSeconds(thresholdSec)}`;
 }
 
+// Sample up to `k` unique elements from `arr` without allocating a full
+// shuffled copy. With 649 sprites cached and k=24 the partial Fisher-Yates
+// touches ~24 indices instead of all 649.
+function sampleN<T>(arr: ReadonlyArray<T>, k: number): T[] {
+  const n = arr.length;
+  if (k >= n) return [...arr];
+  const pool = [...arr];
+  const out: T[] = [];
+  for (let i = 0; i < k; i++) {
+    const j = i + Math.floor(Math.random() * (n - i));
+    const picked = pool[j] as T;
+    pool[j] = pool[i] as T;
+    out.push(picked);
+  }
+  return out;
+}
+
 function triggerNagOverlay(): void {
   if (overlayHandles) return;
   if (!settings) return;
   if (!cache || Object.keys(cache.byId).length === 0) return;
 
-  const urls = Object.values(cache.byId).filter((u): u is string => typeof u === "string");
-  if (urls.length === 0) return;
+  const allUrls = Object.values(cache.byId).filter((u): u is string => typeof u === "string");
+  if (allUrls.length === 0) return;
+  const urls = sampleN(allUrls, NAG_OVERLAY_MAX_SPRITES);
 
   overlayHandles = mountOverlay({
     spriteDataUrls: urls,
@@ -579,10 +631,20 @@ async function reloadCache(): Promise<void> {
 
 function teardown(): void {
   stopLoop();
+  pauseWorkTimer();
   // host.remove() recursively removes all descendants (containers, labels, zzz)
   if (host) host.remove();
   host = null;
-  shadow = null;
   lane = null;
   pokemons = [];
+  // Both the indicator and the nag overlay live in their own shadow hosts
+  // outside `host`. Without this they'd survive a settings-driven teardown
+  // (e.g. user disables the extension while the overlay is showing) and
+  // leave undismissable orphans on the page, plus a stale overlayHandles
+  // ref that would block the next nag forever.
+  if (overlayHandles) {
+    overlayHandles.destroy();
+    overlayHandles = null;
+  }
+  teardownIndicator();
 }

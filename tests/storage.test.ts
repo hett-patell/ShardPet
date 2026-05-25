@@ -42,9 +42,9 @@ describe("mergeSettings", () => {
     expect(merged.blacklist).toEqual([]);
   });
 
-  test("clamps count to 1..3", () => {
+  test("clamps count to 1..5", () => {
     expect(mergeSettings({ count: 0 as 1 }).count).toBe(1);
-    expect(mergeSettings({ count: 9 as 1 }).count).toBe(3);
+    expect(mergeSettings({ count: 9 as 1 }).count).toBe(5);
   });
 
   test("clamps sizePx to 24..128", () => {
@@ -65,6 +65,20 @@ describe("mergeSettings", () => {
   test("clamps workThresholdMinutes to 1..120", () => {
     expect(mergeSettings({ workThresholdMinutes: 0 }).workThresholdMinutes).toBe(1);
     expect(mergeSettings({ workThresholdMinutes: 9999 }).workThresholdMinutes).toBe(120);
+  });
+
+  test("lowercases blacklist/allowlist entries (location.hostname is always lc)", () => {
+    const merged = mergeSettings({
+      blacklist: ["GitHub.com", "MAIL.example.com"],
+      allowlist: ["Notion.so"]
+    });
+    expect(merged.blacklist).toEqual(["github.com", "mail.example.com"]);
+    expect(merged.allowlist).toEqual(["notion.so"]);
+  });
+
+  test("trims and drops blank hostname entries", () => {
+    const merged = mergeSettings({ blacklist: ["  github.com  ", "", "   "] });
+    expect(merged.blacklist).toEqual(["github.com"]);
   });
 });
 

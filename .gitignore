@@ -6,3 +6,6 @@ dist/
 
 # Release artifacts — uploaded to GitHub Releases, not tracked here
 shardpet-v*.zip
+
+# Raw favicon source — committed copies live in icons/ at 16/32/48/128 px
+/favicon

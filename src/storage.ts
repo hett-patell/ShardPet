@@ -3,7 +3,7 @@ export type ReducedMotion = "auto" | "off" | "on";
 
 export type Settings = {
   enabled: boolean;
-  count: 1 | 2 | 3;
+  count: 1 | 2 | 3 | 4 | 5;
   sizePx: number;
   speed: Speed;
   verticalOffsetPx: number;
@@ -53,13 +53,25 @@ export const DEFAULT_WORK_TIMERS: WorkTimers = {
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
+// Hostnames as reported by location.hostname are always lowercase, so we
+// normalise list entries here too — otherwise "GitHub.com" in the allowlist
+// would silently never match a real navigation. Doing it in mergeSettings
+// also heals legacy mixed-case data from earlier versions on next read.
+const normaliseHostList = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value
+        .filter((x): x is string => typeof x === "string")
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s.length > 0)
+    : [];
+
 export function mergeSettings(partial: Partial<Settings> | undefined): Settings {
   const s = { ...DEFAULT_SETTINGS, ...(partial ?? {}) };
-  const count = clamp(s.count, 1, 3) as 1 | 2 | 3;
+  const count = clamp(s.count, 1, 5) as 1 | 2 | 3 | 4 | 5;
   const sizePx = clamp(s.sizePx, 24, 128);
   const verticalOffsetPx = clamp(s.verticalOffsetPx, 0, 40);
-  const blacklist = Array.isArray(s.blacklist) ? s.blacklist.filter(x => typeof x === "string") : [];
-  const allowlist = Array.isArray(s.allowlist) ? s.allowlist.filter(x => typeof x === "string") : [];
+  const blacklist = normaliseHostList(s.blacklist);
+  const allowlist = normaliseHostList(s.allowlist);
   const workThresholdMinutes = clamp(s.workThresholdMinutes, 1, 120);
   const favorites = Array.isArray(s.favorites) ? s.favorites.filter(x => typeof x === "number") : [];
   return { ...s, count, sizePx, verticalOffsetPx, blacklist, allowlist, workThresholdMinutes, favorites };

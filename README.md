@@ -23,9 +23,9 @@
 
 You ever wish your browser had a small friend? You ever wish that small friend had Strong Opinions about your YouTube rabbit holes? Congratulations — you wished a thing into existence and now it's a Chromium extension.
 
-**ShardPet** drops 1–3 animated Gen 5 Pokémon onto every web page you visit. They wander. They hop. They occasionally stop to think about their life. You can click one to swap it for another. They are pixelated, they are emotionally unavailable, and they will not stop you from opening Twitter.
+**ShardPet** drops 1–5 animated Gen 5 Pokémon onto every web page you visit. They wander. They hop. They occasionally stop to think about their life. You can click one to swap it for another. They are pixelated, they are emotionally unavailable, and they will not stop you from opening Twitter.
 
-But the **other** thing they do — that's where it gets unhinged. Add a productivity threshold. Add an allowlist of sites that "count as work" (a generous fiction we are all in on). The moment you spend too long anywhere else, **every single Pokémon you've ever cached** materialises across your screen at once, in a glorious pixel-art fullscreen "**GET BACK TO WORK!**" overlay. They are everywhere. They are watching. They will not leave until you click "Dismiss" and admit you have a problem.
+But the **other** thing they do — that's where it gets unhinged. Add a productivity threshold. Add an allowlist of sites that "count as work" (a generous fiction we are all in on). The moment you spend too long anywhere else, **two dozen of your cached Pokémon** materialise across your screen at once, in a glorious pixel-art fullscreen "**GET BACK TO WORK!**" overlay. They are everywhere. They are watching. They will not leave until you click "Dismiss" and admit you have a problem.
 
 It is also, somehow, designed to use less CPU than your desktop wallpaper.
 
@@ -47,7 +47,7 @@ It is also, somehow, designed to use less CPU than your desktop wallpaper.
 
 <img align="right" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/79.gif" width="80" alt="Slowpoke" />
 
-- **1–3 wandering Pokémon** that walk, idle, and occasionally hop. Click one to reroll it. They have free will. Mostly.
+- **1–5 wandering Pokémon** that walk, idle, and occasionally hop. Click one to reroll it. They have free will. Mostly.
 - **Highly customisable**: count, size (24–128 px — yes you can make them huge), bottom offset, speed (slow / normal / fast / "Slowpoke is sprinting"), per-host blacklist for sites where you'd rather not be perceived.
 - **The Productivity Nag™**: per-hostname cumulative timer (1–120 min, default **15 min**), allowlist for sites that don't count, and a 5-minute cooldown after each dismiss because we're not monsters.
 - **Live timer pill** (optional) — a tiny top-right HUD that judges you in real time. `reddit.com • 4m37s / 5m00s` is a deeply uncomfortable string.
@@ -101,7 +101,7 @@ Click the **ShardPet** toolbar icon. A 340px popup falls out. Two sections.
 ### Pokémon controls
 
 - Enable / disable the whole show
-- Count (1–3), size (24–128 px), bottom offset
+- Count (1–5), size (24–128 px), bottom offset
 - Speed: `slow` / `normal` / `fast`
 - Reduced motion: `auto` (follow OS) / `off` / `on`
 - **Blacklist** — hostnames where Pokémon won't appear (one per line; subdomains match). Useful for `mail.example.com`, banking sites, your therapist's intake form.
@@ -115,7 +115,7 @@ Click the **ShardPet** toolbar icon. A 340px popup falls out. Two sections.
 - **Reset timers** — nukes per-hostname accumulators and any active cooldown. For when you've earned a clean slate or want to test the overlay without sitting through five minutes of suspense.
 - **Resync sprites** — re-fetches the cache from PokéAPI. Run this if you ever feel your pets are getting stale.
 
-When the overlay fires: title in pixel-art font, every cached Pokémon scattered across the screen via grid-jitter placement (each gets its own distinct zone — no clumping, no overlap, no Pokémon left behind). Dismiss with the button, click outside the title card, or hit **Esc**. That starts a 5-minute cooldown and zeroes the dismissed hostname's counter, so the next nag is also a full threshold away. Mercy.
+When the overlay fires: title in pixel-art font, two dozen Pokémon (sampled fresh from the cache each time) scattered across the screen via grid-jitter placement — each gets its own distinct zone, no clumping, no overlap. Dismiss with the button, click outside the title card, or hit **Esc**. That starts a 5-minute cooldown and zeroes the dismissed hostname's counter, so the next nag is also a full threshold away. Mercy.
 
 <img align="right" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/65.gif" width="80" alt="Alakazam" />
 
@@ -125,7 +125,7 @@ When the overlay fires: title in pixel-art font, every cached Pokémon scattered
 npm install         # install deps
 npm run dev         # Vite dev (popup HMR)
 npm run build       # production build → dist/
-npm test            # unit tests (Vitest, 45 of them, all green)
+npm test            # unit tests (Vitest, all green)
 npm run typecheck   # strict TS, no `any`s, no excuses
 ```
 
@@ -138,8 +138,8 @@ src/
   overlay.ts          # "Get back to work!" overlay (shadow-DOM, scattered)
   overlay.css         # pixel-art title font, scatter animations
   popup/
-    index.html        # the 340px happy place
-    popup.ts          # bound form ↔ chrome.storage settings
+    index.html        # 340px Game Boy-styled settings panel
+    popup.ts          # bound form ↔ chrome.storage + live preview lane
   storage.ts          # typed chrome.storage.local accessors + defaults
   styles.css          # lane + sprite styles (loaded as ?raw into shadow)
   sprite-fetcher.ts   # PokéAPI fetch + base64 (no FileReader; MV3-safe)
@@ -147,6 +147,7 @@ src/
   wander.ts           # pure walk/idle/hop state machine (unit-tested)
   work-timer.ts       # pure cumulative timer + cooldown state (unit-tested)
 
+icons/                # 16/32/48/128 PNGs for the toolbar + Chrome menus
 tests/                # Vitest specs for the four pure modules
 ```
 
@@ -158,7 +159,7 @@ The pure modules (`wander.ts`, `work-timer.ts`, `storage.ts`, `sprite-fetcher.ts
 A: That's the GitHub raw URL where the animated GIFs live. The extension hits it exactly once on install — and again only if you click **Resync sprites**. After that it's offline forever.
 
 **Q: Does it slow down web pages?**
-A: On a typical laptop the wander loop costs well under 1% CPU. The work timer wakes once every 5 seconds while the tab is visible. Hidden tabs do exactly zero work. Memory: a few hundred KB for the cached sprite data URLs plus three `<img>` elements at most. Your browser eats more for breakfast.
+A: On a typical laptop the wander loop costs well under 1% CPU. The work timer wakes once every 5 seconds while the tab is visible. Hidden tabs do exactly zero work. Memory: a few hundred KB for the cached sprite data URLs plus up to five `<img>` elements. Your browser eats more for breakfast.
 
 **Q: Will it leak its styles into the pages I visit?**
 A: No. Both the lane and the overlay live in `closed` shadow roots, and the host elements use `all: initial`. Your CSS-in-JS library can rest easy.
@@ -171,6 +172,9 @@ A: Fixed in v1.0.0. `applyDismiss` now resets the dismissed hostname's accumulat
 
 **Q: What's different in v2?**
 A: Three things, mostly: (1) **all 649 Gen 1–5 Pokémon** (v1 shipped 24 starters); (2) sprite cache now refreshes every 90 days so you pick up upstream fixes; (3) several quiet correctness/perf fixes — the storage-event suppression race is gone, allowlist hits no longer leave dead keys behind, the per-hostname history is capped at 100 entries to stop unbounded growth, the `latin1` `TextDecoder` replaced a chunked base64 hot-path, and the default focus threshold is now 15 min instead of an aggressive 5. v1 is preserved as the "minimal" build if you want the lighter cache.
+
+**Q: What's new in v2.1?**
+A: A bit of polish and a bit of plumbing. The popup got a full Game Boy-themed pixel-art rewrite — chunky borders, segmented controls instead of dropdowns, a real **live preview lane** so you can see your settings before saving, and a proper bundled toolbar icon (no more generic puzzle piece). Pet count now goes up to **5** instead of 3. The "Get back to work" overlay caps at **24 sprites** instead of dumping all 649 on the page — same vibe, far less melted GPU. Plus several lifecycle fixes: the overlay can no longer become undismissable if you disable the extension mid-nag, hostnames are now case-insensitive (so `GitHub.com` in your allowlist actually matches `github.com`), the popup threshold slider goes to 120 like the docs always claimed, and pages restored from bfcache no longer leak a stale rAF loop into detached DOM nodes.
 
 **Q: Can I add my own Pokémon list?**
 A: Yes — edit `src/pokemon-list.ts`, rebuild, and click **Resync sprites**. Mythical / legendary Pokémon are excellent candidates for "shame me extra hard."
